@@ -1,0 +1,100 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>79f5b521-d025-4ac2-87d8-c1474570e539</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>test.py</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>BiInputConv</Name>
+    <RootNamespace>BiInputConv</RootNamespace>
+    <InterpreterId>CondaEnv|CondaEnv|tensorflow</InterpreterId>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="core\model.py" />
+    <Compile Include="core\train.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="core\utils.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="core\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="test.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="core\" />
+    <Folder Include="data\" />
+    <Folder Include="Data\Test\" />
+    <Folder Include="Data\Train\" />
+    <Folder Include="model\" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="CondaEnv|CondaEnv|tensorflow" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="data\Neuroscan_locs_orig.mat" />
+    <Content Include="Data\Test\A01E.mat" />
+    <Content Include="Data\Test\A01E_label.mat" />
+    <Content Include="Data\Test\A02E.mat" />
+    <Content Include="Data\Test\A02E_label.mat" />
+    <Content Include="Data\Test\A03E.mat" />
+    <Content Include="Data\Test\A03E_label.mat" />
+    <Content Include="Data\Test\A04E.mat" />
+    <Content Include="Data\Test\A04E_label.mat" />
+    <Content Include="Data\Test\A05E.mat" />
+    <Content Include="Data\Test\A05E_label.mat" />
+    <Content Include="Data\Test\A06E.mat" />
+    <Content Include="Data\Test\A06E_label.mat" />
+    <Content Include="Data\Test\A07E.mat" />
+    <Content Include="Data\Test\A07E_label.mat" />
+    <Content Include="Data\Test\A08E.mat" />
+    <Content Include="Data\Test\A08E_label.mat" />
+    <Content Include="Data\Test\A09E.mat" />
+    <Content Include="Data\Test\A09E_label.mat" />
+    <Content Include="Data\Train\A01T.mat" />
+    <Content Include="Data\Train\A01T_label.mat" />
+    <Content Include="Data\Train\A02T.mat" />
+    <Content Include="Data\Train\A02T_label.mat" />
+    <Content Include="Data\Train\A03T.mat" />
+    <Content Include="Data\Train\A03T_label.mat" />
+    <Content Include="Data\Train\A04T.mat" />
+    <Content Include="Data\Train\A04T_label.mat" />
+    <Content Include="Data\Train\A05T.mat" />
+    <Content Include="Data\Train\A05T_label.mat" />
+    <Content Include="Data\Train\A06T.mat" />
+    <Content Include="Data\Train\A06T_label.mat" />
+    <Content Include="Data\Train\A07T.mat" />
+    <Content Include="Data\Train\A07T_label.mat" />
+    <Content Include="Data\Train\A08T.mat" />
+    <Content Include="Data\Train\A08T_label.mat" />
+    <Content Include="Data\Train\A09T.mat" />
+    <Content Include="Data\Train\A09T_label.mat" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+  <!-- Uncomment the CoreCompile target to enable the Build command in
+       Visual Studio and specify your pre- and post-build commands in
+       the BeforeBuild and AfterBuild targets below. -->
+  <!--<Target Name="CoreCompile" />-->
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+</Project>
