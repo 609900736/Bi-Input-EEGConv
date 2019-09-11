@@ -42,6 +42,8 @@
   <ItemGroup>
     <Folder Include="core\" />
     <Folder Include="data\" />
+    <Folder Include="data\Test\" />
+    <Folder Include="data\Train\" />
     <Folder Include="model\" />
   </ItemGroup>
   <ItemGroup>
@@ -49,6 +51,78 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="data\22scan_locs.mat" />
+    <Content Include="data\Test\A01E.mat" />
+    <Content Include="data\Test\A01E_label.mat" />
+    <Content Include="data\Test\A01E_label_pp.mat" />
+    <Content Include="data\Test\A01E_pp.mat" />
+    <Content Include="data\Test\A02E.mat" />
+    <Content Include="data\Test\A02E_label.mat" />
+    <Content Include="data\Test\A02E_label_pp.mat" />
+    <Content Include="data\Test\A02E_pp.mat" />
+    <Content Include="data\Test\A03E.mat" />
+    <Content Include="data\Test\A03E_label.mat" />
+    <Content Include="data\Test\A03E_label_pp.mat" />
+    <Content Include="data\Test\A03E_pp.mat" />
+    <Content Include="data\Test\A04E.mat" />
+    <Content Include="data\Test\A04E_label.mat" />
+    <Content Include="data\Test\A04E_label_pp.mat" />
+    <Content Include="data\Test\A04E_pp.mat" />
+    <Content Include="data\Test\A05E.mat" />
+    <Content Include="data\Test\A05E_label.mat" />
+    <Content Include="data\Test\A05E_label_pp.mat" />
+    <Content Include="data\Test\A05E_pp.mat" />
+    <Content Include="data\Test\A06E.mat" />
+    <Content Include="data\Test\A06E_label.mat" />
+    <Content Include="data\Test\A06E_label_pp.mat" />
+    <Content Include="data\Test\A06E_pp.mat" />
+    <Content Include="data\Test\A07E.mat" />
+    <Content Include="data\Test\A07E_label.mat" />
+    <Content Include="data\Test\A07E_label_pp.mat" />
+    <Content Include="data\Test\A07E_pp.mat" />
+    <Content Include="data\Test\A08E.mat" />
+    <Content Include="data\Test\A08E_label.mat" />
+    <Content Include="data\Test\A08E_label_pp.mat" />
+    <Content Include="data\Test\A08E_pp.mat" />
+    <Content Include="data\Test\A09E.mat" />
+    <Content Include="data\Test\A09E_label.mat" />
+    <Content Include="data\Test\A09E_label_pp.mat" />
+    <Content Include="data\Test\A09E_pp.mat" />
+    <Content Include="data\Train\A01T.mat" />
+    <Content Include="data\Train\A01T_label.mat" />
+    <Content Include="data\Train\A01T_label_pp.mat" />
+    <Content Include="data\Train\A01T_pp.mat" />
+    <Content Include="data\Train\A02T.mat" />
+    <Content Include="data\Train\A02T_label.mat" />
+    <Content Include="data\Train\A02T_label_pp.mat" />
+    <Content Include="data\Train\A02T_pp.mat" />
+    <Content Include="data\Train\A03T.mat" />
+    <Content Include="data\Train\A03T_label.mat" />
+    <Content Include="data\Train\A03T_label_pp.mat" />
+    <Content Include="data\Train\A03T_pp.mat" />
+    <Content Include="data\Train\A04T.mat" />
+    <Content Include="data\Train\A04T_label.mat" />
+    <Content Include="data\Train\A04T_label_pp.mat" />
+    <Content Include="data\Train\A04T_pp.mat" />
+    <Content Include="data\Train\A05T.mat" />
+    <Content Include="data\Train\A05T_label.mat" />
+    <Content Include="data\Train\A05T_label_pp.mat" />
+    <Content Include="data\Train\A05T_pp.mat" />
+    <Content Include="data\Train\A06T.mat" />
+    <Content Include="data\Train\A06T_label.mat" />
+    <Content Include="data\Train\A06T_label_pp.mat" />
+    <Content Include="data\Train\A06T_pp.mat" />
+    <Content Include="data\Train\A07T.mat" />
+    <Content Include="data\Train\A07T_label.mat" />
+    <Content Include="data\Train\A07T_label_pp.mat" />
+    <Content Include="data\Train\A07T_pp.mat" />
+    <Content Include="data\Train\A08T.mat" />
+    <Content Include="data\Train\A08T_label.mat" />
+    <Content Include="data\Train\A08T_label_pp.mat" />
+    <Content Include="data\Train\A08T_pp.mat" />
+    <Content Include="data\Train\A09T.mat" />
+    <Content Include="data\Train\A09T_label.mat" />
+    <Content Include="data\Train\A09T_label_pp.mat" />
+    <Content Include="data\Train\A09T_pp.mat" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
