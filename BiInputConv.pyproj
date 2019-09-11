@@ -52,42 +52,6 @@
   <ItemGroup>
     <Content Include="data\22scan_locs.mat" />
     <Content Include="data\Neuroscan_locs_orig.mat" />
-    <Content Include="Data\Test\A01E.mat" />
-    <Content Include="Data\Test\A01E_label.mat" />
-    <Content Include="Data\Test\A02E.mat" />
-    <Content Include="Data\Test\A02E_label.mat" />
-    <Content Include="Data\Test\A03E.mat" />
-    <Content Include="Data\Test\A03E_label.mat" />
-    <Content Include="Data\Test\A04E.mat" />
-    <Content Include="Data\Test\A04E_label.mat" />
-    <Content Include="Data\Test\A05E.mat" />
-    <Content Include="Data\Test\A05E_label.mat" />
-    <Content Include="Data\Test\A06E.mat" />
-    <Content Include="Data\Test\A06E_label.mat" />
-    <Content Include="Data\Test\A07E.mat" />
-    <Content Include="Data\Test\A07E_label.mat" />
-    <Content Include="Data\Test\A08E.mat" />
-    <Content Include="Data\Test\A08E_label.mat" />
-    <Content Include="Data\Test\A09E.mat" />
-    <Content Include="Data\Test\A09E_label.mat" />
-    <Content Include="Data\Train\A01T.mat" />
-    <Content Include="Data\Train\A01T_label.mat" />
-    <Content Include="Data\Train\A02T.mat" />
-    <Content Include="Data\Train\A02T_label.mat" />
-    <Content Include="Data\Train\A03T.mat" />
-    <Content Include="Data\Train\A03T_label.mat" />
-    <Content Include="Data\Train\A04T.mat" />
-    <Content Include="Data\Train\A04T_label.mat" />
-    <Content Include="Data\Train\A05T.mat" />
-    <Content Include="Data\Train\A05T_label.mat" />
-    <Content Include="Data\Train\A06T.mat" />
-    <Content Include="Data\Train\A06T_label.mat" />
-    <Content Include="Data\Train\A07T.mat" />
-    <Content Include="Data\Train\A07T_label.mat" />
-    <Content Include="Data\Train\A08T.mat" />
-    <Content Include="Data\Train\A08T_label.mat" />
-    <Content Include="Data\Train\A09T.mat" />
-    <Content Include="Data\Train\A09T_label.mat" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
