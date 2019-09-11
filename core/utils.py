@@ -49,6 +49,7 @@ def azim_proj(pos):
     [r, elev, az] = cart2sph(pos[0], pos[1], pos[2])
     return pol2cart(az, m.pi / 2 - elev)
 
+
 def load_data(data_file, label=True):
     """                                               
     Loads the data from MAT file. MAT file would be two kinds.
@@ -63,10 +64,10 @@ def load_data(data_file, label=True):
     print("Loading data from %s" % (data_file))
     dataMat = sio.loadmat(data_file, mat_dtype=True)
     print("Data loading complete. Shape is %r" % (dataMat['s'].shape,))
-    if classification:
+    if label:
         return dataMat['classlabel']
     else:
-        return dataMat['s']
+        return dataMat['s']#[n_channels,n_samples,n_trials]
 
 
 def gen_images(locs, features, n_gridpoints, normalize=True,
@@ -138,7 +139,9 @@ def gen_images(locs, features, n_gridpoints, normalize=True,
             temp_interp[c][~np.isnan(temp_interp[c])] = \
                 scale(temp_interp[c][~np.isnan(temp_interp[c])])
         temp_interp[c] = np.nan_to_num(temp_interp[c])
-    return np.swapaxes(np.asarray(temp_interp), 0, 1)     # swap axes to have [samples, colors, W, H]
+
+    temp_interp = np.swapaxes(np.asarray(temp_interp), 0, 1)     # swap axes to have [samples, colors, W, H]
+    return 
 
 
 def augment_EEG(data, stdMult, pca=False, n_components=2):

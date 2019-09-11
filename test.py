@@ -6,5 +6,5 @@ import scipy.io as sio
 
 if __name__=='__main__':
     data = utils.load_data('./data/Train/A01T.mat',label=False)
-    print(__name__)
-   
+    print(__package__,__file__)
+    

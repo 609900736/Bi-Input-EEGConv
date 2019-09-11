@@ -50,6 +50,7 @@
     <InterpreterReference Include="CondaEnv|CondaEnv|tensorflow" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="data\22scan_locs.mat" />
     <Content Include="data\Neuroscan_locs_orig.mat" />
     <Content Include="Data\Test\A01E.mat" />
     <Content Include="Data\Test\A01E_label.mat" />
