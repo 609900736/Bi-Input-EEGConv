@@ -42,8 +42,6 @@
   <ItemGroup>
     <Folder Include="core\" />
     <Folder Include="data\" />
-    <Folder Include="Data\Test\" />
-    <Folder Include="Data\Train\" />
     <Folder Include="model\" />
   </ItemGroup>
   <ItemGroup>
@@ -51,7 +49,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="data\22scan_locs.mat" />
-    <Content Include="data\Neuroscan_locs_orig.mat" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
