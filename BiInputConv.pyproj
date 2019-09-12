@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|tensorflow" />
+    <InterpreterReference Include="CondaEnv|CondaEnv|tensorflow2" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="data\22scan_locs.mat" />
