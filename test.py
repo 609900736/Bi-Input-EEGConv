@@ -1,5 +1,5 @@
 #coding:utf-8
-import core.model as model
+import core.models as models
 import core.train as train
 import core.utils as utils
 import scipy.io as sio
@@ -41,10 +41,10 @@ if __name__ == '__main__':
     # 保存模型图
     tf.keras.utils.plot_model(model, 'Multi_input_model.png')
  
-    model.compile(optimizer=tf.keras.optimizers.Adam(1e-4),
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
               loss='binary_crossentropy',
               metrics=['accuracy'])
-    history = model.fit([x1, x2], y, epochs=500, batch_size=10,validation_split=0.3)
+    history = model.fit([x1, x2], y, epochs=100, batch_size=10,validation_split=0.3)
 
     # Plot training & validation accuracy values
     plt.figure()

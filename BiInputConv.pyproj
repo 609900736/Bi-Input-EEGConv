@@ -22,7 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="core\model.py" />
+    <Compile Include="core\models.py" />
     <Compile Include="core\train.py">
       <SubType>Code</SubType>
     </Compile>
