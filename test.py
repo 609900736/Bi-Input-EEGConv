@@ -31,20 +31,20 @@ def multi_input_model():
     return model
  
 if __name__ == '__main__':
-    # 产生训练数据
-    x1 = np.random.rand(100, 100, 1)
-    x2 = np.random.rand(100, 50, 1)
-    # 产生标签
-    y = np.random.randint(0, 2, (100,))
+    ## 产生训练数据
+    #x1 = np.random.rand(100, 100, 1)
+    #x2 = np.random.rand(100, 50, 1)
+    ## 产生标签
+    #y = np.random.randint(0, 2, (100,))
  
-    model = multi_input_model()
-    # 保存模型图
-    tf.keras.utils.plot_model(model, 'Multi_input_model.png')
+    #model = multi_input_model()
+    ## 保存模型图
+    #tf.keras.utils.plot_model(model, 'Multi_input_model.png')
  
-    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
-    history = model.fit([x1, x2], y, epochs=100, batch_size=10,validation_split=0.3)
+    #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
+    #          loss='binary_crossentropy',
+    #          metrics=['accuracy'])
+    #history = model.fit([x1, x2], y, epochs=100, batch_size=10,validation_split=0.3)
 
     # Plot training & validation accuracy values
     plt.figure()

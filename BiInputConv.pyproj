@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>79f5b521-d025-4ac2-87d8-c1474570e539</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>test.py</StartupFile>
+    <StartupFile>BCIIV2a.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +22,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="BCIIV2a.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="core\models.py" />
     <Compile Include="core\train.py">
       <SubType>Code</SubType>
@@ -124,6 +127,16 @@
     <Content Include="data\Train\A09T_label.mat" />
     <Content Include="data\Train\A09T_label_pp.mat" />
     <Content Include="data\Train\A09T_pp.mat" />
+    <Content Include="model\2019_9_19_17_2_9_A01T_checkpoint.h5" />
+    <Content Include="model\2019_9_19_17_2_9_A02T_checkpoint.h5" />
+    <Content Include="model\2019_9_19_17_2_9_A03T_checkpoint.h5" />
+    <Content Include="model\2019_9_19_17_2_9_A04T_checkpoint.h5" />
+    <Content Include="model\2019_9_19_17_2_9_A05T_checkpoint.h5" />
+    <Content Include="model\2019_9_19_17_2_9_A06T_checkpoint.h5" />
+    <Content Include="model\2019_9_19_17_2_9_A07T_checkpoint.h5" />
+    <Content Include="model\2019_9_19_17_2_9_A08T_checkpoint.h5" />
+    <Content Include="model\2019_9_19_17_2_9_A09T_checkpoint.h5" />
+    <Content Include="model\README.MD" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
