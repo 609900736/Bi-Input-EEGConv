@@ -9,12 +9,13 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from core.utils import load_data
+from core.utils import load_data, filterbank
 from core.models import EEGNet
 from core.train import train, make_checkpoint
 from tensorflow.python.keras import backend as K
 
 srate = 250
+K.set_image_data_format('channels_first')
 
 if __name__ == '__main__':
     x_train = []

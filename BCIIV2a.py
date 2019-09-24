@@ -19,6 +19,7 @@ srate = 250
 K.set_session(tf.Session(config=tf.ConfigProto(device_count={'CPU':10},
                                                intra_op_parallelism_threads=10,
                                                inter_op_parallelism_threads=2)))
+K.set_image_data_format('channels_first')
 
 if __name__=='__main__':
     x_train = []
@@ -49,7 +50,7 @@ if __name__=='__main__':
     tf.keras.utils.plot_model(model, 'EEGNet.png')
 
     earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
-                                                     patience=50, verbose=0, mode='auto')
+                                                     patience=100, verbose=0, mode='auto')
 
     tm = time.localtime()
     history = []
