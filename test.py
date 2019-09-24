@@ -42,7 +42,7 @@ if __name__ == '__main__':
                   metrics=['accuracy'])
 
     for i in range(1,10):
-        filepath = os.path.join('./model/2019_9_23_21_38_31'+'_A0'+str(i)+
+        filepath = os.path.join('./model/2019_9_24_10_4_13'+'_A0'+str(i)+
                                 'T_EEGNet.h5')
         model.load_weights(filepath)
         x = x_test.pop(0)

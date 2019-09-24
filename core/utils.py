@@ -347,6 +347,7 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
         FBdata.append(signal.filtfilt(b, a, data, axis=1, method='gust', irlen=50))
     #now np.array(FBdata) shapes as[n_colors, n_trials, n_channels, n_samples]
     FBdata = np.swapaxes(np.array(FBdata), 0, 1)
+    print("Data filterbank complete. Shape is %r" % (FBdata.shape,))
     return FBdata
 
 

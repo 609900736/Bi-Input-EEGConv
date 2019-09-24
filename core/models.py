@@ -47,22 +47,22 @@ def rawEEGConvModel(Colors, Chans, Samples, dropoutRate = 0.5,
                          'SpatialDropout3D or Dropout, passed as a string.')
     # Learn from raw EEG signals
     input_s = Input(shape=(Colors, Chans, Samples), dtype=dtype)
-    s = SeparableConv2D(F1, (1, kernLength), padding = 'same', use_bias = False)(input_s)
-    s = BatchNormalization(axis = 1)(s)
+    s = Conv2D(F1, (1, kernLength), padding = 'same', use_bias = False)(input_s)
+    s = BatchNormalization(axis = 2)(s)
     s = DepthwiseConv2D((Chans, 1), use_bias = False, depth_multiplier = D,
                         depthwise_constraint = max_norm(1.))(s)
-    s = BatchNormalization(axis = 1)(s)
+    s = BatchNormalization(axis = 2)(s)
     s = Activation('elu')(s)
     s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
     s = SeparableConv2D(F2, (1, 16), padding = 'same', use_bias = False)(s)
-    s = BatchNormalization(axis = 1)(s)
+    s = BatchNormalization(axis = 2)(s)
     s = Activation('elu')(s)
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
-    s = Flatten()(s)
+    flatten = Flatten()(s)
 
-    return Model(input=input_s,output=s)
+    return Model(inputs=input_s,outputs=flatten)
 
 
 def graphEEGConvModel(Colors, Samples, H, W, dropoutRate = 0.5,
@@ -99,31 +99,31 @@ def graphEEGConvModel(Colors, Samples, H, W, dropoutRate = 0.5,
     g = Activation('relu')(g)
     g = AveragePooling3D((3, 3, 16))(g)
     g = dropoutType(dropoutRate)(g)
-    g = Flatten()(g)
+    flatten = Flatten()(g)
 
-    return Model(input=input_g,output=g)
+    return Model(inputs=input_g,outputs=flatten)
 
 
 def rawEEGConvNet(n_classes, model, Colors=16, Chans=22, 
-                  Samples=1000, dtype=tf.float32):
+                  Samples=1000, norm_rate=0.25, dtype=tf.float32):
     # Learn from raw EEG signals
     input_s = Input(shape=(Colors, Chans, Samples), dtype=dtype)
     s = model(input_s)
     _FC_s = Dense(n_classes*10, activation='relu', kernel_constraint = max_norm(norm_rate))(s)
     _output_s = Dense(n_classes, activation='softmax', kernel_constraint = max_norm(norm_rate))(_FC_s)
 
-    return Model(input=input_s,output=_output_s)
+    return Model(inputs=input_s,outputs=_output_s)
 
 
 def graphEEGConvNet(n_classes, model, Colors=16, H=16, 
-                    W=16, Samples=1000, dtype=tf.float32):
+                    W=16, Samples=1000, norm_rate=0.25, dtype=tf.float32):
     # Learn from EEG graphs
     input_g = Input(shape=(Colors, Samples, H, W), dtype=dtype)
     g = model(input_g)
     _FC_g = Dense(n_classes*10, activation='relu', kernel_constraint = max_norm(norm_rate))(g)
     _output_g = Dense(n_classes, activation='softmax', kernel_constraint = max_norm(norm_rate))(_FC_g)
 
-    return Model(input=input_g,output=_output_g)
+    return Model(inputs=input_g,outputs=_output_g)
 
 
 def BiInputsEEGConvNet(n_classes, model_s, model_g, Chans=22, 
@@ -157,7 +157,7 @@ def BiInputsEEGConvNet(n_classes, model_s, model_g, Chans=22,
     _x = Dense(n_classes*10, activation='relu', kernel_constraint = max_norm(norm_rate))(_x)
     _output = Dense(n_classes, activation='softmax', kernel_constraint = max_norm(norm_rate))(_x)
 
-    return Model(input=[_input_s,_input_g],output=_output)
+    return Model(inputs=[_input_s,_input_g],outputs=_output)
 
 
 def _old_BIEEGConvNet(n_classes, Chans, Samples, Colors, H, W,
@@ -222,7 +222,7 @@ def _old_BIEEGConvNet(n_classes, Chans, Samples, Colors, H, W,
     x = Dense(n_classes*10, activation='relu', kernel_constraint = max_norm(norm_rate))(x)
     predictions = Dense(n_classes, activation='softmax', kernel_constraint = max_norm(norm_rate))(x)
 
-    return Model(input=[input_s,input_g],output=predictions)
+    return Model(inputs=[input_s,input_g],outputs=predictions)
 
 
 def EEGNet(nb_classes, Chans = 64, Samples = 128, 
@@ -302,18 +302,18 @@ def EEGNet(nb_classes, Chans = 64, Samples = 128,
     ##################################################################
     block1       = Conv2D(F1, (1, kernLength), padding = 'same',
                                    use_bias = False)(input1)
-    block1       = BatchNormalization(axis = 1)(block1)
+    block1       = BatchNormalization(axis = 2)(block1)
     block1       = DepthwiseConv2D((Chans, 1), use_bias = False, 
                                    depth_multiplier = D,
                                    depthwise_constraint = max_norm(1.))(block1)
-    block1       = BatchNormalization(axis = 1)(block1)
+    block1       = BatchNormalization(axis = 2)(block1)
     block1       = Activation('elu')(block1)
     block1       = AveragePooling2D((1, 4))(block1)
     block1       = dropoutType(dropoutRate)(block1)
     
     block2       = SeparableConv2D(F2, (1, 16), padding = 'same', 
                                    use_bias = False)(block1)
-    block2       = BatchNormalization(axis = 1)(block2)
+    block2       = BatchNormalization(axis = 2)(block2)
     block2       = Activation('elu')(block2)
     block2       = AveragePooling2D((1, 8))(block2)
     block2       = dropoutType(dropoutRate)(block2)
