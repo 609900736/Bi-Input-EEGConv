@@ -49,7 +49,7 @@ def rawEEGConvModel(Colors, Chans, Samples, dropoutRate = 0.5,
     l_s = []
     input_s = Input(shape=(Colors, Chans, Samples), dtype=dtype)
     for i in range(Colors):
-        input = Input(shape=(1, Chans, Samples), dtype=dtype, tensor=input_s[i,:,:])
+        input = Input(shape=(1, Chans, Samples), dtype=dtype, tensor=input_s[:,i,:,:])
         s = SeparableConv2D(F1, (1, kernLength), padding = 'same', use_bias = False)(input)
         s = BatchNormalization(axis = 2)(s)
         s = DepthwiseConv2D((Chans, 1), use_bias = False, depth_multiplier = D,
