@@ -19,7 +19,8 @@ from tensorflow.python.keras.layers import Dense, \
                                            SpatialDropout2D, \
                                            SpatialDropout3D, \
                                            Dropout, \
-                                           Flatten
+                                           Flatten, \
+                                           Lambda
 from tensorflow.python.keras.constraints import max_norm, \
                                                 min_max_norm, \
                                                 unit_norm
@@ -67,7 +68,7 @@ def rawEEGConvModel(Colors, Chans, Samples, dropoutRate = 0.5,
         l_m.append(model)
     l_s = []
     for i in range(Colors):
-        l_s.append(model(input_s[:,i,:,:]))
+        l_s.append(model(Lambda(lambda s:s[:,i,:,:])(input_s)))
     con = Concatenate(axis=1)(l_s)
     flatten = Flatten()(con)
 
