@@ -19,5 +19,5 @@ K.set_image_data_format('channels_first')
 
 if __name__=='__main__':
     #train_EEGNet(4)
-    train_rawEEGConvNet(4)
+    train_rawEEGConvNet(4, srate=srate)
     pass
