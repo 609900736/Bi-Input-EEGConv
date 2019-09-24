@@ -56,7 +56,7 @@ def rawEEGConvModel(Colors, Chans, Samples, dropoutRate = 0.5,
     s = SeparableConv2D(F2, (1, 16), padding = 'same', use_bias = False)(s)
     s = BatchNormalization(axis = 1)(s)
     s = Activation('elu')(s)
-    s = AveragePooling2D((1, 16))(s)
+    s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     s = Flatten()(s)
 
@@ -128,7 +128,41 @@ def GraphEEGConvNet(n_classes, Colors, H, W, Samples,
     return Model(input=input_g,output=_output_g)
 
 
-def BIEEGConvNet(n_classes, Chans, Samples, Colors, H, W,
+def BiInputsEEGConvNet(n_classes, model_s, model_g, Chans=22, 
+                 Samples=1000, Colors=16, H=16, W=16,
+                 norm_rate = 0.25, dtype = tf.float32):
+    """
+    data_format: NCHW for 4D data
+                 NCHWT for 5D data
+
+    Inputs:
+      n_classes       : int, number of classes to classify
+      Chans, Samples  : int, number of channels and time points in the EEG data
+      Colors, H, W    : int, filter numbers of filter-bank, height and width of the EEG graph
+      norm_rate       : float, number of max_norm rate
+      dtype           : object, type of data, default tf.float32
+
+    Output:
+      model           : BIEEGConvNet keras model
+    """
+
+    # Learn from raw EEG signals
+    _input_s = Input(shape=(Colors, Chans, Samples), dtype=dtype)
+    _s = model_s(_input_s)
+
+    # Learn from EEG graphs
+    _input_g = Input(shape=(Colors, Samples, H, W), dtype=dtype)
+    _g = model_g(_input_g)
+
+    # Merge both inputs and make predictions
+    _x = Concatenate(axis=-1)([_s,_g])
+    _x = Dense(n_classes*10, activation='relu', kernel_constraint = max_norm(norm_rate))(_x)
+    _output = Dense(n_classes, activation='softmax', kernel_constraint = max_norm(norm_rate))(_x)
+
+    return Model(input=[_input_s,_input_g],output=_output)
+
+
+def _old_BIEEGConvNet(n_classes, Chans, Samples, Colors, H, W,
                 dropoutRate = 0.5, kernLength = 64, F1 = 8,
                 D = 2, F2 = 16, F3 = 32, F4 = 40, F5 = 24,
                 norm_rate = 0.25, dtype = tf.float32,
@@ -170,14 +204,12 @@ def BIEEGConvNet(n_classes, Chans, Samples, Colors, H, W,
         raise ValueError('dropoutType must be one of SpatialDropout2D, '
                          'SpatialDropout3D or Dropout, passed as a string.')
     # Learn from raw EEG signals
-    input_s = Input(shape=(1, Chans, Samples), dtype=dtype)
+    input_s = Input(shape=(Colors, Chans, Samples), dtype=dtype)
     Ms = rawEEGConvModel(Chans=Chans, Samples=Samples,
                         dropoutRate=dropoutRate, kernLength=kernLength,
                         F1=F1, D=D, F2=F2, dtype=dtype,
                         dropoutType=dropoutType)
     s = Ms(input_s)
-    _FC_s = Dense(n_classes*10, activation='relu', kernel_constraint = max_norm(norm_rate))(s)
-    _output_s = Dense(n_classes, activation='softmax', kernel_constraint = max_norm(norm_rate))(_FC_s)
 
     # Learn from EEG graphs
     input_g = Input(shape=(Colors, Samples, H, W), dtype=dtype)
@@ -186,15 +218,13 @@ def BIEEGConvNet(n_classes, Chans, Samples, Colors, H, W,
                             F3=F3, F4=F4, F5=F5, dtype=dtype,
                             dropoutType=dropoutType)
     g = Mg(input_g)
-    _FC_g = Dense(n_classes*10, activation='relu', kernel_constraint = max_norm(norm_rate))(g)
-    _output_g = Dense(n_classes, activation='softmax', kernel_constraint = max_norm(norm_rate))(_FC_g)
 
     # Merge both inputs and make predictions
     x = Concatenate(axis=-1)([s,g])
     x = Dense(n_classes*10, activation='relu', kernel_constraint = max_norm(norm_rate))(x)
     predictions = Dense(n_classes, activation='softmax', kernel_constraint = max_norm(norm_rate))(x)
 
-    return Model(input=[input_s,input_g],output=[_output_s,_output_g,predictions])
+    return Model(input=[input_s,input_g],output=predictions)
 
 
 def EEGNet(nb_classes, Chans = 64, Samples = 128, 

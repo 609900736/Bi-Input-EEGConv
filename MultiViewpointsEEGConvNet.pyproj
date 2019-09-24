@@ -3,13 +3,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>79f5b521-d025-4ac2-87d8-c1474570e539</ProjectGuid>
-    <ProjectHome>.</ProjectHome>
+    <ProjectHome>
+    </ProjectHome>
     <StartupFile>BCIIV2a.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>BiInputConv</Name>
+    <Name>MultiViewpointsEEGConvNet</Name>
     <RootNamespace>BiInputConv</RootNamespace>
     <InterpreterId>CondaEnv|CondaEnv|tensorflow</InterpreterId>
   </PropertyGroup>
@@ -136,6 +137,41 @@
     <Content Include="model\2019_9_19_17_2_9_A07T_checkpoint.h5" />
     <Content Include="model\2019_9_19_17_2_9_A08T_checkpoint.h5" />
     <Content Include="model\2019_9_19_17_2_9_A09T_checkpoint.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A01T_EEGNet.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A02T_EEGNet.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A03T_EEGNet.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A04T_EEGNet.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A05T_EEGNet.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A06T_EEGNet.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A07T_EEGNet.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A08T_EEGNet.h5" />
+    <Content Include="model\2019_9_20_17_39_13_A09T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_13_32_38_A01T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_13_32_38_A02T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A01T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A02T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A03T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A04T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A05T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A06T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A07T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A08T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A09T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_14_50_51_A09T_EEGNet.npy" />
+    <Content Include="model\2019_9_21_21_6_6_A01T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A02T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A03T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A04T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A05T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A06T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A07T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A08T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A09T_EEGNet.h5" />
+    <Content Include="model\2019_9_21_21_6_6_A09T_EEGNet.npy" />
+    <Content Include="model\2019_9_22_16_0_46_A01T_EEGNet.h5" />
+    <Content Include="model\2019_9_22_16_0_46_A02T_EEGNet.h5" />
+    <Content Include="model\2019_9_22_16_0_46_A03T_EEGNet.h5" />
+    <Content Include="model\2019_9_22_16_0_46_A04T_EEGNet.h5" />
     <Content Include="model\README.MD" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />

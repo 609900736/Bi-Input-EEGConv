@@ -4,63 +4,49 @@ import core.train as train
 import core.utils as utils
 import scipy.io as sio
 
+import os
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-def multi_input_model():
-    """构建多输入模型"""
-    input1_ = tf.keras.Input(shape=(100, 1), name='input1')
-    input2_ = tf.keras.Input(shape=(50, 1), name='input2')
- 
-    x1 = tf.keras.layers.Conv1D(16, kernel_size=3, strides=1, activation='relu', padding='same')(input1_)
-    x1 = tf.keras.layers.MaxPool1D(pool_size=10, strides=10)(x1)
- 
-    x2 = tf.keras.layers.Conv1D(16, kernel_size=3, strides=1, activation='relu', padding='same')(input2_)
-    x2 = tf.keras.layers.MaxPool1D(pool_size=5, strides=5)(x2)
- 
-    x = tf.keras.layers.concatenate([x1, x2])
-    x = tf.keras.layers.Flatten()(x)
- 
-    x = tf.keras.layers.Dense(10, activation='relu')(x)
-    output_ = tf.keras.layers.Dense(1, activation='sigmoid', name='output')(x)
- 
-    model = tf.keras.Model(inputs=[input1_, input2_], outputs=[output_])
-    model.summary()
- 
-    return model
- 
+from core.utils import load_data
+from core.models import EEGNet
+from core.train import train, make_checkpoint
+from tensorflow.python.keras import backend as K
+
+srate = 250
+
 if __name__ == '__main__':
-    ## 产生训练数据
-    #x1 = np.random.rand(100, 100, 1)
-    #x2 = np.random.rand(100, 50, 1)
-    ## 产生标签
-    #y = np.random.randint(0, 2, (100,))
- 
-    #model = multi_input_model()
-    ## 保存模型图
-    #tf.keras.utils.plot_model(model, 'Multi_input_model.png')
- 
-    #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
-    #          loss='binary_crossentropy',
-    #          metrics=['accuracy'])
-    #history = model.fit([x1, x2], y, epochs=100, batch_size=10,validation_split=0.3)
+    x_train = []
+    y_train = []
+    x_test = []
+    y_test = []
+    for i in range(1,10):
+        filepath = os.path.join('./data/Train','A0'+str(i)+'T_pp.mat')
+        x_train.append(load_data(filepath,label=False))
+        x_train[-1] = np.expand_dims(x_train[-1][:,:,125:625],1)
+        filepath = os.path.join('./data/Train','A0'+str(i)+'T_label_pp.mat')
+        y_train.append(load_data(filepath,label=True))
+        y_train[-1] -= 1
+        filepath = os.path.join('./data/Test','A0'+str(i)+'E_pp.mat')
+        x_test.append(load_data(filepath,label=False))
+        x_test[-1] = np.expand_dims(x_test[-1][:,:,125:625],1)
+        filepath = os.path.join('./data/Test','A0'+str(i)+'E_label_pp.mat')
+        y_test.append(load_data(filepath,label=True))
+        y_test[-1] -= 1
+        
+    model = EEGNet(4,Chans=22,Samples=500,kernLength=64)
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
+                  loss=tf.keras.losses.sparse_categorical_crossentropy,
+                  metrics=['accuracy'])
 
-    # Plot training & validation accuracy values
-    plt.figure()
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
-    plt.title('Model accuracy')
-    plt.ylabel('Accuracy')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Test'], loc='upper left')
+    for i in range(1,10):
+        filepath = os.path.join('./model/2019_9_23_21_38_31'+'_A0'+str(i)+
+                                'T_EEGNet.h5')
+        model.load_weights(filepath)
+        x = x_test.pop(0)
+        y = y_test.pop(0)
+        model.evaluate(x,y,batch_size=10,verbose=2)
+        #model.reset_states()
 
-    # Plot training & validation loss values
-    plt.figure()
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('Model loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Test'], loc='upper left')
-    plt.show()
+    pass

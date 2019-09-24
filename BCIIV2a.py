@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from core.utils import load_data
+from core.utils import load_data, filterbank
 from core.models import EEGNet
 from core.train import train, make_checkpoint
 from tensorflow.python.keras import backend as K
@@ -27,23 +27,25 @@ if __name__=='__main__':
     y_test = []
     for i in range(1,10):
         filepath = os.path.join('./data/Train','A0'+str(i)+'T_pp.mat')
+        #x_train.append(filterbank(load_data(filepath,label=False)))
         x_train.append(load_data(filepath,label=False))
-        x_train[-1] = np.expand_dims(x_train[-1][:,:22,:],1)
+        x_train[-1] = np.expand_dims(x_train[-1][:,:,125:625],1)
         filepath = os.path.join('./data/Train','A0'+str(i)+'T_label_pp.mat')
         y_train.append(load_data(filepath,label=True))
         y_train[-1] -= 1
         filepath = os.path.join('./data/Test','A0'+str(i)+'E_pp.mat')
+        #x_test.append(filterbank(load_data(filepath,label=False)))
         x_test.append(load_data(filepath,label=False))
-        x_test[-1] = np.expand_dims(x_test[-1][:,:22,:],1)
+        x_test[-1] = np.expand_dims(x_test[-1][:,:,125:625],1)
         filepath = os.path.join('./data/Test','A0'+str(i)+'E_label_pp.mat')
         y_test.append(load_data(filepath,label=True))
         y_test[-1] -= 1
         
-    model = EEGNet(4,Chans=22,Samples=1000,kernLength=64)
+    model = EEGNet(4,Chans=22,Samples=500,kernLength=64)
     model.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
                   loss=tf.keras.losses.sparse_categorical_crossentropy,
                   metrics=['accuracy'])
-    # 保存模型图
+    # export graph of the model
     tf.keras.utils.plot_model(model, 'EEGNet.png')
 
     earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
@@ -64,8 +66,7 @@ if __name__=='__main__':
 
     filepath = os.path.join('./model',str(tm.tm_year)+'_'+str(tm.tm_mon)+
                                 '_'+str(tm.tm_mday)+'_'+str(tm.tm_hour)+'_'+
-                                str(tm.tm_min)+'_'+str(tm.tm_sec)+'_A0'+str(i)+
-                                'T_EEGNet.npy')
+                                str(tm.tm_min)+'_'+str(tm.tm_sec)+'_EEGNet.npy')
     np.save(filepath,history)
     #history = np.load(filepath,allow_pickle=True)
     for i in range(1,10):

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29215.179
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "BiInputConv", "BiInputConv.pyproj", "{79F5B521-D025-4AC2-87D8-C1474570E539}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "MultiViewpointsEEGConvNet", "MultiViewpointsEEGConvNet.pyproj", "{79F5B521-D025-4AC2-87D8-C1474570E539}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
