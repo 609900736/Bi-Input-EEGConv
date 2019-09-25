@@ -12,12 +12,12 @@ from core.train import train_EEGNet, train_rawEEGConvNet
 from tensorflow.python.keras import backend as K
 
 srate = 250
-K.set_session(tf.Session(config=tf.ConfigProto(device_count={'CPU':10},
-                                               intra_op_parallelism_threads=10,
-                                               inter_op_parallelism_threads=2)))
+#K.set_session(tf.Session(config=tf.ConfigProto(device_count={'CPU':10},
+#                                               intra_op_parallelism_threads=10,
+#                                               inter_op_parallelism_threads=2)))
 K.set_image_data_format('channels_first')
 
 if __name__=='__main__':
-    #train_EEGNet(4)
-    train_rawEEGConvNet(4, srate=srate)
+    train_EEGNet(4, srate=srate)
+    #train_rawEEGConvNet(4, srate=srate)
     pass

@@ -68,8 +68,13 @@ def rawEEGConvModel(Colors, Chans, Samples, dropoutRate = 0.5,
         l_m.append(model)
     l_s = []
     for i in range(Colors):
-        l_s.append(model(Lambda(lambda s:s[:,i,:,:])(input_s)))
+        l_s.append(l_m[i](Lambda(lambda s:s[:,i:i+1,:,:])(input_s)))
     con = Concatenate(axis=1)(l_s)
+    con = SeparableConv2D(F2*Colors, (1, 16), padding = 'same', use_bias = False)(con)
+    con = BatchNormalization(axis = 2)(con)
+    con = Activation('elu')(con)
+    con = AveragePooling2D((1, 4))(con)
+    con = dropoutType(dropoutRate)(con)
     flatten = Flatten()(con)
 
     return Model(inputs=input_s,outputs=flatten)

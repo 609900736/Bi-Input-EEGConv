@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 
 from core.utils import load_data, filterbank
 from core.models import EEGNet
-from core.train import train, make_checkpoint
+
+from tensorflow.python.keras.models import load_model
 from tensorflow.python.keras import backend as K
 
 srate = 250
@@ -35,19 +36,16 @@ if __name__ == '__main__':
         filepath = os.path.join('./data/Test','A0'+str(i)+'E_label_pp.mat')
         y_test.append(load_data(filepath,label=True))
         y_test[-1] -= 1
-        
-    model = EEGNet(4,Chans=22,Samples=500,kernLength=64)
-    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
-                  loss=tf.keras.losses.sparse_categorical_crossentropy,
-                  metrics=['accuracy'])
 
     for i in range(1,10):
         filepath = os.path.join('./model/2019_9_24_10_4_13'+'_A0'+str(i)+
                                 'T_EEGNet.h5')
-        model.load_weights(filepath)
+        model = load_model(filepath,compile=False)
+        model.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
+                  loss=tf.keras.losses.sparse_categorical_crossentropy,
+                  metrics=['accuracy'])
         x = x_test.pop(0)
         y = y_test.pop(0)
         model.evaluate(x,y,batch_size=10,verbose=2)
-        #model.reset_states()
 
     pass

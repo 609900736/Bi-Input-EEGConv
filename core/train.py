@@ -39,13 +39,13 @@ def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250,
         y_test[-1] -= 1
         
     model = EEGNet(n_classes,Chans=Chans,Samples=Samples)
-    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss=tf.keras.losses.sparse_categorical_crossentropy,
                   metrics=['accuracy'])
     # export graph of the model
     tf.keras.utils.plot_model(model, 'EEGNet.png', show_shapes=True)
 
-    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-2, 
                                                      patience=patience, verbose=0, mode='auto')
 
     tm = time.localtime()
@@ -132,14 +132,14 @@ def train_rawEEGConvNet(n_classes, Colors=16, Chans=22, start=0, end=4,
     tf.keras.utils.plot_model(model, 'rawEEGConvModel.png', show_shapes=True)
 
     model = rawEEGConvNet(n_classes,model,Colors=Colors,Chans=Chans,Samples=Samples)
-    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss=tf.keras.losses.sparse_categorical_crossentropy,
                   metrics=['accuracy'])
     # export graph of the model
     model.summary()
     tf.keras.utils.plot_model(model, 'rawEEGConvNet.png', show_shapes=True)
 
-    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-2, 
                                                      patience=patience, verbose=0, mode='auto')
 
     tm = time.localtime()
@@ -226,14 +226,14 @@ def train_graphEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
     tf.keras.utils.plot_model(model, 'graphEEGConvModel.png', show_shapes=True)
 
     model = graphEEGConvNet(n_classes,model,Colors=Colors,Samples=Samples,H=H,W=W)
-    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss=tf.keras.losses.sparse_categorical_crossentropy,
                   metrics=['accuracy'])
     # export graph of the model
     model.summary()
     tf.keras.utils.plot_model(model, 'graphEEGConvNet.png', show_shapes=True)
 
-    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-2, 
                                                      patience=patience, verbose=0, mode='auto')
 
     tm = time.localtime()
@@ -321,14 +321,14 @@ def train_BiInputsEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
 
     net_s = rawEEGConvNet(n_classes,model_s,Colors=Colors,Chans=Chans,Samples=Samples)
 
-    net_s.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
+    net_s.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss=tf.keras.losses.sparse_categorical_crossentropy,
                   metrics=['accuracy'])
     # export graph of the model
     net_s.summary()
     tf.keras.utils.plot_model(net_s, 'rawEEGConvNet.png', show_shapes=True)
 
-    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-2, 
                                                      patience=patience, verbose=0, mode='auto')
 
     tm = time.localtime()
