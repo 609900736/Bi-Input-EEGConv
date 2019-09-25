@@ -26,19 +26,19 @@ if __name__ == '__main__':
     for i in range(1,10):
         filepath = os.path.join('./data/Train','A0'+str(i)+'T_pp.mat')
         x_train.append(load_data(filepath,label=False))
-        x_train[-1] = np.expand_dims(x_train[-1][:,:,125:625],1)
+        x_train[-1] = np.expand_dims(x_train[-1],1)
         filepath = os.path.join('./data/Train','A0'+str(i)+'T_label_pp.mat')
         y_train.append(load_data(filepath,label=True))
         y_train[-1] -= 1
         filepath = os.path.join('./data/Test','A0'+str(i)+'E_pp.mat')
         x_test.append(load_data(filepath,label=False))
-        x_test[-1] = np.expand_dims(x_test[-1][:,:,125:625],1)
+        x_test[-1] = np.expand_dims(x_test[-1],1)
         filepath = os.path.join('./data/Test','A0'+str(i)+'E_label_pp.mat')
         y_test.append(load_data(filepath,label=True))
         y_test[-1] -= 1
 
     for i in range(1,10):
-        filepath = os.path.join('./model/2019_9_24_10_4_13'+'_A0'+str(i)+
+        filepath = os.path.join('./model/2019_9_25_14_0_18'+'_A0'+str(i)+
                                 'T_EEGNet.h5')
         model = load_model(filepath,compile=False)
         model.compile(optimizer=tf.keras.optimizers.Adam(1e-3,amsgrad=True),
