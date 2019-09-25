@@ -15,9 +15,9 @@ srate = 250
 #K.set_session(tf.Session(config=tf.ConfigProto(device_count={'CPU':10},
 #                                               intra_op_parallelism_threads=10,
 #                                               inter_op_parallelism_threads=2)))
-K.set_image_data_format('channels_first')
+K.set_image_data_format('channels_last')
 
 if __name__=='__main__':
-    train_EEGNet(4, srate=srate)
-    #train_rawEEGConvNet(4, srate=srate)
+    #train_EEGNet(4, srate=srate)
+    train_rawEEGConvNet(4, srate=srate)
     pass

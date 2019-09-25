@@ -51,7 +51,7 @@ def azim_proj(pos):
     return pol2cart(az, m.pi / 2 - elev)
 
 
-def load_data(data_file, label=False):
+def load_data(data_file, label=True):
     """                                               
     Loads the data from MAT file. MAT file would be two kinds.
     'data.mat' which contains the feature matrix in the shape
@@ -227,7 +227,7 @@ def load_or_generate_images(file_path, average_image=3):
     """
     print('-'*100)
     print('Loading original data...')
-    locs = scipy.io.loadmat('data/Neuroscan_locs_orig.mat')
+    locs = sio.loadmat('data/Neuroscan_locs_orig.mat')
     locs_3d = locs['A']
     locs_2d = []
     # Convert to 2D
@@ -241,7 +241,7 @@ def load_or_generate_images(file_path, average_image=3):
 
     if average_image == 1:   # for CNN only
         if os.path.exists(file_path + 'images_average.mat'):
-            images_average = scipy.io.loadmat(file_path + 'images_average.mat')['images_average']
+            images_average = sio.loadmat(file_path + 'images_average.mat')['images_average']
             print('\n')
             print('Load images_average done!')
         else:
@@ -265,7 +265,7 @@ def load_or_generate_images(file_path, average_image=3):
     
     elif average_image == 2:    # for mulit-frame model such as LSTM
         if os.path.exists(file_path + 'images_timewin.mat'):
-            images_timewin = scipy.io.loadmat(file_path + 'images_timewin.mat')['images_timewin']
+            images_timewin = sio.loadmat(file_path + 'images_timewin.mat')['images_timewin']
             print('\n')    
             print('Load images_timewin done!')
         else:
@@ -284,7 +284,7 @@ def load_or_generate_images(file_path, average_image=3):
     
     else:
         if os.path.exists(file_path + 'images_average.mat'):
-            images_average = scipy.io.loadmat(file_path + 'images_average.mat')['images_average']
+            images_average = sio.loadmat(file_path + 'images_average.mat')['images_average']
             print('\n')
             print('Load images_average done!')
         else:
@@ -302,7 +302,7 @@ def load_or_generate_images(file_path, average_image=3):
             print('Saving images_average done!')
 
         if os.path.exists(file_path + 'images_timewin.mat'):
-            images_timewin = scipy.io.loadmat(file_path + 'images_timewin.mat')['images_timewin']
+            images_timewin = sio.loadmat(file_path + 'images_timewin.mat')['images_timewin']
             print('\n')    
             print('Load images_timewin done!')
         else:
@@ -337,7 +337,7 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
         step    : int, the interval of each neighbouring filter in the filter-bank, default is 2
 
     Output:
-        FBdata  : np.array, data after filter-bank, shapes as [n_trials, n_colors, n_channels, n_samples]
+        FBdata  : np.array, data after filter-bank, shapes as [n_trials, n_channels, n_samples, n_colors]
     '''
     n_trials, n_channels, n_samples = data.shape
     FBdata = []
@@ -347,8 +347,30 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
         FBdata.append(signal.filtfilt(b, a, data, axis=1, method='gust', irlen=50))
     #now np.array(FBdata) shapes as[n_colors, n_trials, n_channels, n_samples]
     FBdata = np.swapaxes(np.array(FBdata), 0, 1)
-    print("Data filterbank complete. Shape is %r" % (FBdata.shape,))
+    FBdata = np.swapaxes(np.array(FBdata), 1, 2)
+    FBdata = np.swapaxes(np.array(FBdata), 2, 3)
+    print("Data filterbank complete. Shape is %r." % (FBdata.shape,))
     return FBdata
+
+
+def load_or_gen_filterbank_data(filepath, start=0, end=4, srate=250):
+    if os.path.exists(filepath[:-4]+'_fb.mat'):
+        print('Loading data from %s' %(filepath[:-4]+'_fb.mat'))
+        data = sio.loadmat(filepath[:-4]+'_fb.mat')['fb']
+        print('Load filterbank data complete. Shape is %r.' %(data.shape,))
+    else:
+        data = filterbank(load_data(filepath,label=False),srate=srate)
+        data = data[:,:,start*srate:end*srate,:]
+        print('Load filterbank data complete. Shape is %r.' %(data.shape,))
+        sio.savemat(filepath[:-4]+'_fb.mat',{'fb':data})
+        print('Save filterbank data[\'fb\'] complete. To %s' %(filepath[:-4]+'_fb.mat'))
+
+    return data
+
+
+def load_locs(filepath):
+
+    return
 
 
 if __name__=='__main__':
