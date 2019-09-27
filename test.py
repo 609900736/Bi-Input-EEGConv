@@ -18,38 +18,30 @@ from tensorflow.python.keras import backend as K
 srate = 250
 start = 0
 end = 4
-prep = True
+prep = False
 Samples = (end-start)*srate
 K.set_image_data_format('channels_last')
 
 if __name__ == '__main__':
-    x_train = []
-    y_train = []
-    x_test = []
-    y_test = []
-    
     if prep:
         pp = '_pp'
     else:
         pp = ''
 
     for i in range(1,10):
-        filepath = os.path.join('./data/Test','A0'+str(i)+'E'+pp+'.mat')
-        x_test.append(load_data(filepath,label=False))
-        x_test[-1] = np.expand_dims(x_test[-1][:,:,start*srate:end*srate],-1)
-        filepath = os.path.join('./data/Test','A0'+str(i)+'E_label'+pp+'.mat')
-        y_test.append(load_data(filepath,label=True))
-        y_test[-1] -= 1
+        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
+        x_test = load_data(filepath,label=False)
+        x_test = np.expand_dims(x_test[:,:,start*srate:end*srate],-1)
+        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
+        y_test = load_data(filepath,label=True)
+        y_test -= 1
 
-    for i in range(1,10):
-        filepath = os.path.join('./model/2019_9_25_14_0_18'+'_A0'+str(i)+
+        filepath = os.path.join('model','2019_9_27_11_53_18'+'_A0'+str(i)+
                                 'T_EEGNet.h5')
-        model = load_model(filepath,compile=False)
+        model = load_model(filepath)
         #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
         #          loss=tf.keras.losses.sparse_categorical_crossentropy,
         #          metrics=['accuracy'])
-        x = x_test.pop(0)
-        y = y_test.pop(0)
-        model.evaluate(x,y,batch_size=10,verbose=2)
+        model.evaluate(x_test,y_test,batch_size=10,verbose=2)
 
     pass

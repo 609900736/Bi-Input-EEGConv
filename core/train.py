@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from core.utils import load_data, load_or_gen_filterbank_data, load_locs
+from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data
 from core.models import EEGNet, rawEEGConvModel, rawEEGConvNet, graphEEGConvModel, graphEEGConvNet, BiInputsEEGConvNet
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 
@@ -14,29 +14,11 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint
 def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250, 
                  batch_size=10, epochs=500, verbose=2, patience=100, 
                  drawflag=False, restate=True, prep=True):
-    x_train = []
-    y_train = []
-    x_test = []
-    y_test = []
     Samples = (end-start)*srate
     if prep:
         pp = '_pp'
     else:
         pp = ''
-
-    for i in range(1,10):
-        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
-        x_train.append(load_data(filepath,label=False))
-        x_train[-1] = np.expand_dims(x_train[-1][:,:,start*srate:end*srate],-1)
-        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
-        y_train.append(load_data(filepath))
-        y_train[-1] -= 1
-        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
-        x_test.append(load_data(filepath,label=False))
-        x_test[-1] = np.expand_dims(x_test[-1][:,:,start*srate:end*srate],-1)
-        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
-        y_test.append(load_data(filepath))
-        y_test[-1] -= 1
         
     model = EEGNet(n_classes,Chans=Chans,Samples=Samples)
     model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
@@ -53,6 +35,19 @@ def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250,
     if not os.path.exists('model'): # 判断是否存在
             os.makedirs('model') # 不存在则创建
     for i in range(1,10):
+        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
+        x_train = load_data(filepath,label=False)
+        x_train = np.expand_dims(x_train[:,:,start*srate:end*srate],-1)
+        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
+        y_train = load_data(filepath)
+        y_train -= 1
+        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
+        x_test = load_data(filepath,label=False)
+        x_test = np.expand_dims(x_test[:,:,start*srate:end*srate],-1)
+        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
+        y_test = load_data(filepath)
+        y_test -= 1
+
         filepath = os.path.join('model',str(tm.tm_year)+'_'+str(tm.tm_mon)+
                                 '_'+str(tm.tm_mday)+'_'+str(tm.tm_hour)+'_'+
                                 str(tm.tm_min)+'_'+str(tm.tm_sec)+'_A0'+str(i)+
@@ -61,9 +56,9 @@ def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250,
         checkpointer = ModelCheckpoint(filepath=filepath, verbose=1,
                                        save_best_only=True)
 
-        history.append(model.fit(x=x_train.pop(0),y=y_train.pop(0),batch_size=batch_size,
+        history.append(model.fit(x=x_train,y=y_train,batch_size=batch_size,
                                  epochs=epochs,callbacks=[checkpointer,earlystopping],
-                                 verbose=verbose,validation_data=[x_test.pop(0),y_test.pop(0)]).history)
+                                 verbose=verbose,validation_data=[x_test,y_test]).history)
 
         if restate:
             model.reset_states()
@@ -98,31 +93,15 @@ def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250,
         plt.show()
 
 
-def train_rawEEGConvNet(n_classes, Colors=16, Chans=22, start=0, end=4, 
+def train_rawEEGConvNet(n_classes, Colors=5, Chans=22, start=0, end=4, 
                         srate=250, batch_size=10, epochs=500, verbose=2, 
                         patience=100, drawflag=False, restate=True, 
                         prep=True):
-    x_train = []
-    y_train = []
-    x_test = []
-    y_test = []
     Samples = (end-start)*srate
     if prep:
         pp = '_pp'
     else:
         pp = ''
-
-    for i in range(1,10):
-        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
-        x_train.append(load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate))
-        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
-        y_train.append(load_data(filepath))
-        y_train[-1] -= 1
-        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
-        x_test.append(load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate))
-        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
-        y_test.append(load_data(filepath))
-        y_test[-1] -= 1
         
     model = rawEEGConvModel(Colors=Colors,Chans=Chans,Samples=Samples)
     model.summary()
@@ -145,6 +124,17 @@ def train_rawEEGConvNet(n_classes, Colors=16, Chans=22, start=0, end=4,
     if not os.path.exists('model'): # 判断是否存在
             os.makedirs('model') # 不存在则创建
     for i in range(1,10):
+        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
+        x_train = load_or_gen_interestingband_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
+        y_train = load_data(filepath)
+        y_train -= 1
+        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
+        x_test = load_or_gen_interestingband_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
+        y_test = load_data(filepath)
+        y_test -= 1
+
         filepath = os.path.join('model',str(tm.tm_year)+'_'+str(tm.tm_mon)+
                                 '_'+str(tm.tm_mday)+'_'+str(tm.tm_hour)+'_'+
                                 str(tm.tm_min)+'_'+str(tm.tm_sec)+'_A0'+str(i)+
@@ -153,9 +143,9 @@ def train_rawEEGConvNet(n_classes, Colors=16, Chans=22, start=0, end=4,
         checkpointer = ModelCheckpoint(filepath=filepath, verbose=1,
                                        save_best_only=True)
 
-        history.append(model.fit(x=x_train.pop(0),y=y_train.pop(0),batch_size=batch_size,
+        history.append(model.fit(x=x_train,y=y_train,batch_size=batch_size,
                                  epochs=epochs,callbacks=[checkpointer,earlystopping],
-                                 verbose=verbose,validation_data=[x_test.pop(0),y_test.pop(0)]).history)
+                                 verbose=verbose,validation_data=[x_test,y_test]).history)
 
         if restate:
             model.reset_states()
@@ -190,32 +180,16 @@ def train_rawEEGConvNet(n_classes, Colors=16, Chans=22, start=0, end=4,
         plt.show()
 
 
-def train_graphEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16, 
+def train_graphEEGConvNet(n_classes, Colors=8, Chans=22, W=16, H=16, 
                           start=0, end=4, srate=250, batch_size=10, 
                           epochs=500, verbose=2, patience=100, 
                           drawflag=False, restate=True, prep=True):
-    x_train = []
-    y_train = []
-    x_test = []
-    y_test = []
     Samples = (end-start)*srate
     if prep:
         pp = '_pp'
     else:
         pp = ''
-
-    for i in range(1,10):
-        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
-        x_train.append(load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate))
-        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
-        y_train.append(load_data(filepath))
-        y_train[-1] -= 1
-        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
-        x_test.append(load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate))
-        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
-        y_test.append(load_data(filepath))
-        y_test[-1] -= 1
-        
+       
     model = graphEEGConvModel(Colors=Colors,Samples=Samples,H=H,W=W)
     model.summary()
     # export graph of the model
@@ -237,6 +211,17 @@ def train_graphEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
     if not os.path.exists('model'): # 判断是否存在
             os.makedirs('model') # 不存在则创建
     for i in range(1,10):
+        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
+        x_train = load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
+        y_train = load_data(filepath)
+        y_train -= 1
+        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
+        x_test = load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
+        y_test = load_data(filepath)
+        y_test -= 1
+
         filepath = os.path.join('model',str(tm.tm_year)+'_'+str(tm.tm_mon)+
                                 '_'+str(tm.tm_mday)+'_'+str(tm.tm_hour)+'_'+
                                 str(tm.tm_min)+'_'+str(tm.tm_sec)+'_A0'+str(i)+
@@ -245,9 +230,9 @@ def train_graphEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
         checkpointer = ModelCheckpoint(filepath=filepath, verbose=1,
                                        save_best_only=True)
 
-        history.append(model.fit(x=x_train.pop(0),y=y_train.pop(0),batch_size=batch_size,
+        history.append(model.fit(x=x_train,y=y_train,batch_size=batch_size,
                                  epochs=epochs,callbacks=[checkpointer,earlystopping],
-                                 verbose=verbose,validation_data=[x_test.pop(0),y_test.pop(0)]).history)
+                                 verbose=verbose,validation_data=[x_test,y_test]).history)
 
         if restate:
             model.reset_states()
@@ -282,31 +267,15 @@ def train_graphEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
         plt.show()
 
 
-def train_BiInputsEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16, 
+def train_BiInputsEEGConvNet(n_classes, Colors=8, Chans=22, W=16, H=16, 
                              start=0, end=4, srate=250, batch_size=10, 
                              epochs=500, verbose=2, patience=100, 
                              drawflag=False, restate=True, prep=True):
-    x_train = []
-    y_train = []
-    x_test = []
-    y_test = []
     Samples = (end-start)*srate
     if prep:
         pp = '_pp'
     else:
         pp = ''
-
-    for i in range(1,10):
-        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
-        x_train.append(load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate))
-        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
-        y_train.append(load_data(filepath))
-        y_train[-1] -= 1
-        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
-        x_test.append(load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate))
-        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
-        y_test.append(load_data(filepath))
-        y_test[-1] -= 1
 
     model_s = rawEEGConvModel(Colors=Colors,Chans=Chans,Samples=Samples)
     model_s.summary()
@@ -330,6 +299,17 @@ def train_BiInputsEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
     if not os.path.exists('model'): # 判断是否存在
             os.makedirs('model') # 不存在则创建
     for i in range(1,10):
+        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
+        x_train = load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
+        y_train = load_data(filepath)
+        y_train -= 1
+        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
+        x_test = load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
+        y_test = load_data(filepath)
+        y_test -= 1
+
         filepath = os.path.join('model',str(tm.tm_year)+'_'+str(tm.tm_mon)+
                                 '_'+str(tm.tm_mday)+'_'+str(tm.tm_hour)+'_'+
                                 str(tm.tm_min)+'_'+str(tm.tm_sec)+'_A0'+str(i)+
@@ -338,9 +318,9 @@ def train_BiInputsEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
         checkpointer = ModelCheckpoint(filepath=filepath, verbose=1,
                                        save_best_only=True)
 
-        history.append(net_s.fit(x=x_train.pop[i-1],y=y_train.pop[i-1],batch_size=batch_size,
+        history.append(net_s.fit(x=x_train,y=y_train,batch_size=batch_size,
                                  epochs=epochs,callbacks=[checkpointer,earlystopping],
-                                 verbose=verbose,validation_data=[x_test.pop[i-1],y_test.pop[i-1]]).history)
+                                 verbose=verbose,validation_data=[x_test,y_test]).history)
 
         if restate:
             model.reset_states()
@@ -365,6 +345,17 @@ def train_BiInputsEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
 
     history = []
     for i in range(1,10):
+        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
+        x_train = load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
+        y_train = load_data(filepath)
+        y_train -= 1
+        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
+        x_test = load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
+        y_test = load_data(filepath)
+        y_test -= 1
+
         filepath = os.path.join('model',str(tm.tm_year)+'_'+str(tm.tm_mon)+
                                 '_'+str(tm.tm_mday)+'_'+str(tm.tm_hour)+'_'+
                                 str(tm.tm_min)+'_'+str(tm.tm_sec)+'_A0'+str(i)+
@@ -373,9 +364,9 @@ def train_BiInputsEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
         checkpointer = ModelCheckpoint(filepath=filepath, verbose=1,
                                        save_best_only=True)
 
-        history.append(net_g.fit(x=x_train.pop[i-1],y=y_train.pop[i-1],batch_size=batch_size,
+        history.append(net_g.fit(x=x_train,y=y_train,batch_size=batch_size,
                                  epochs=epochs,callbacks=[checkpointer,earlystopping],
-                                 verbose=verbose,validation_data=[x_test.pop[i-1],y_test.pop[i-1]]).history)
+                                 verbose=verbose,validation_data=[x_test,y_test]).history)
 
         if restate:
             model.reset_states()
@@ -395,6 +386,17 @@ def train_BiInputsEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
 
     history = []
     for i in range(1,10):
+        filepath = os.path.join('data','Train','A0'+str(i)+'T'+pp+'.mat')
+        x_train = load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Train','A0'+str(i)+'T_label'+pp+'.mat')
+        y_train = load_data(filepath)
+        y_train -= 1
+        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
+        x_test = load_or_gen_filterbank_data(filepath,start=start,end=end,srate=srate)
+        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
+        y_test = load_data(filepath)
+        y_test -= 1
+
         filepath = os.path.join('model',str(tm.tm_year)+'_'+str(tm.tm_mon)+
                                 '_'+str(tm.tm_mday)+'_'+str(tm.tm_hour)+'_'+
                                 str(tm.tm_min)+'_'+str(tm.tm_sec)+'_A0'+str(i)+
@@ -403,9 +405,9 @@ def train_BiInputsEEGConvNet(n_classes, Colors=16, Chans=22, W=16, H=16,
         checkpointer = ModelCheckpoint(filepath=filepath, verbose=1,
                                        save_best_only=True)
 
-        history.append(model.fit(x=x_train[i-1],y=y_train.pop[i-1],batch_size=batch_size,
+        history.append(model.fit(x=x_train,y=y_train,batch_size=batch_size,
                                  epochs=epochs,callbacks=[checkpointer,earlystopping],
-                                 verbose=verbose,validation_data=[x_test.pop[i-1],y_test.pop[i-1]]).history)
+                                 verbose=verbose,validation_data=[x_test,y_test]).history)
 
         if restate:
             model.reset_states()

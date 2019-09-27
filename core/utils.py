@@ -5,6 +5,7 @@ import math as m
 import numpy as np
 import scipy.io as sio
 import scipy.signal as signal
+import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
@@ -344,11 +345,11 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
     for beg in range(start, stop - window + 1, step):
         end = beg + window
         b, a = signal.butter(4, [beg/srate*2, end/srate*2], 'bandpass')
-        FBdata.append(signal.filtfilt(b, a, data, axis=1, method='gust', irlen=50))
+        FBdata.append(signal.filtfilt(b, a, data, axis=-1))
     #now np.array(FBdata) shapes as[n_colors, n_trials, n_channels, n_samples]
     FBdata = np.swapaxes(np.array(FBdata), 0, 1)
-    FBdata = np.swapaxes(np.array(FBdata), 1, 2)
-    FBdata = np.swapaxes(np.array(FBdata), 2, 3)
+    FBdata = np.swapaxes(FBdata, 1, 2)
+    FBdata = np.swapaxes(FBdata, 2, 3)
     print("Data filterbank complete. Shape is %r." % (FBdata.shape,))
     return FBdata
 
@@ -359,7 +360,7 @@ def load_or_gen_filterbank_data(filepath, start=0, end=4, srate=250):
         data = sio.loadmat(filepath[:-4]+'_fb.mat')['fb']
         print('Load filterbank data complete. Shape is %r.' %(data.shape,))
     else:
-        data = filterbank(load_data(filepath,label=False),srate=srate)
+        data = filterbank(load_data(filepath,label=False),srate=srate,step=4)
         data = data[:,:,start*srate:end*srate,:]
         print('Load filterbank data complete. Shape is %r.' %(data.shape,))
         sio.savemat(filepath[:-4]+'_fb.mat',{'fb':data})
@@ -368,10 +369,78 @@ def load_or_gen_filterbank_data(filepath, start=0, end=4, srate=250):
     return data
 
 
-def load_locs(filepath):
+def load_locs():
+    filepath = os.path.join('data','22scan_locs.mat')
+    locs = sio.loadmat(filepath)['A']
+    return locs
 
-    return
+def interestingband(data, srate=250):
+    '''
+    Filter raw signal to five interesting bands - theta, alpha, beta, low gamma, high gamma.
+    theta: 4-8Hz
+    alpha: 8-13Hz
+    beta: 14-30Hz
+    low gamma: 30-40Hz
+    high gamma: 71-91Hz
+
+    Input:
+        data    : np.array, raw data, shapes as [n_trials, n_channels, n_samples]
+        srate   : int, the sample rate of raw data, default is 250
+
+    Output:
+        IBdata  : np.array, data after filter-bank, shapes as [n_trials, n_channels, n_samples, n_colors]
+    '''
+    IBdata = []
+    b, a = signal.butter(4, [4/srate*2, 8/srate*2], 'bandpass')# theta
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
+    b, a = signal.butter(4, [8/srate*2, 13/srate*2], 'bandpass')# alpha
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
+    b, a = signal.butter(4, [14/srate*2, 30/srate*2], 'bandpass')# beta
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
+    b, a = signal.butter(4, [30/srate*2, 40/srate*2], 'bandpass')# low gamma
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
+    b, a = signal.butter(4, [71/srate*2, 91/srate*2], 'bandpass')# high gamma
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
+    #now np.array(IBdata) shapes as[n_colors, n_trials, n_channels, n_samples]
+    IBdata = np.swapaxes(np.array(IBdata), 0, 1)
+    IBdata = np.swapaxes(IBdata, 1, 2)
+    IBdata = np.swapaxes(IBdata, 2, 3)
+    print("Data filterbank complete. Shape is %r." % (IBdata.shape,))
+    return IBdata
+
+
+def load_or_gen_interestingband_data(filepath, start=0, end=4, srate=250):
+    if os.path.exists(filepath[:-4]+'_ib.mat'):
+        print('Loading data from %s' %(filepath[:-4]+'_ib.mat'))
+        data = sio.loadmat(filepath[:-4]+'_ib.mat')['ib']
+        print('Load interestingband data complete. Shape is %r.' %(data.shape,))
+    else:
+        data = interestingband(load_data(filepath,label=False),srate=srate)
+        data = data[:,:,start*srate:end*srate,:]
+        print('Load interestingband data complete. Shape is %r.' %(data.shape,))
+        sio.savemat(filepath[:-4]+'_ib.mat',{'ib':data})
+        print('Save interestingband data[\'ib\'] complete. To %s' %(filepath[:-4]+'_ib.mat'))
+
+    return data
 
 
 if __name__=='__main__':
+    t = np.linspace(0, 1, 1000, False)  # 1 second
+    sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)    # 构造10hz和20hz的两个信号
+    sig = np.array([[sig,sig],[sig,sig]])
+    print(sig.shape)
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    ax1.plot(t, sig[0,0,:])
+    ax1.set_title('10 Hz and 20 Hz sinusoids')
+    ax1.axis([0, 1, -2, 2])
+
+    
+    sos = signal.butter(10, 15, 'hp', fs=1000, output='sos')     #采样率为1000hz，带宽为15hz，输出sos
+    filtered = signal.sosfilt(sos, sig)             #将信号和通过滤波器作用，得到滤波以后的结果。在这里sos有点像冲击响应，这个函数有点像卷积的作用。
+    ax2.plot(t, filtered[0,0,:])
+    ax2.set_title('After 15 Hz high-pass filter')
+    ax2.axis([0, 1, -2, 2])
+    ax2.set_xlabel('Time [seconds]')
+    plt.tight_layout()
+    plt.show()
     print('BiInputConv.core.utils')

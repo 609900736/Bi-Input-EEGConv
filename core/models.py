@@ -8,6 +8,7 @@ from tensorflow.python.keras.layers import Dense, \
                                            Conv3D, \
                                            Concatenate, \
                                            BatchNormalization, \
+                                           AveragePooling1D, \
                                            AveragePooling2D, \
                                            AveragePooling3D, \
                                            MaxPooling2D, \
@@ -49,7 +50,7 @@ def rawEEGConvModel(Chans, Samples, Colors, dropoutRate = 0.5,
     input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
     for i in range(Colors):
         input = Input(shape=(Chans, Samples, 1), dtype=dtype)
-        s = Conv2D(2, (1, kernLength), padding = 'same', use_bias = False)(input)
+        s = Conv2D(F1, (1, kernLength), padding = 'same', use_bias = False)(input)
         s = BatchNormalization(axis = -1)(s)
         s = DepthwiseConv2D((Chans, 1), use_bias = False, depth_multiplier = D,
                             depthwise_constraint = max_norm(1.))(s)
@@ -57,28 +58,34 @@ def rawEEGConvModel(Chans, Samples, Colors, dropoutRate = 0.5,
         s = Activation('elu')(s)
         s = AveragePooling2D((1, 4))(s)
         s = dropoutType(dropoutRate)(s)
-        s = SeparableConv2D(2*D, (1, 2*D), padding = 'same', use_bias = False)(s)
-        s = BatchNormalization(axis = -1)(s)
-        s = Activation('elu')(s)
+        #s = SeparableConv2D(F2, (1, 16), padding = 'same', use_bias = False)(s)
+        #s = BatchNormalization(axis = -1)(s)
+        #s = Activation('elu')(s)
         #s = AveragePooling2D((1, 8))(s)
-        s = dropoutType(dropoutRate)(s)
+        #s = dropoutType(dropoutRate)(s)
         model = Model(inputs=input,outputs=s)
         l_m.append(model)
     l_s = []
     for i in range(Colors):
         l_s.append(l_m[i](Lambda(lambda s:s[:,:,:,i:i+1])(input_s)))
     con = Concatenate(axis=-1)(l_s)
-    con = Conv2D(F1, (kernLength, 1), padding = 'same', use_bias = False, data_format = 'channels_first')(con)
-    con = BatchNormalization(axis = 1)(con)
-    con = DepthwiseConv2D((1, 2*D*Colors), use_bias = False, depth_multiplier = D,
-                          depthwise_constraint = max_norm(1.), data_format = 'channels_first')(con)
-    con = BatchNormalization(axis = 1)(con)
+    #l = []
+    #for i in range(2*D):
+    #    for j in range(Colors):
+    #        l.append(Lambda(lambda s:s[:,:,:,i+2*D*j:i+2*D*j+1])(con))
+    #con = Concatenate(axis=-1)(l)
+    #con = Conv2D(F1, (kernLength, 1), padding = 'same', use_bias = False, data_format = 'channels_first')(con)
+    #con = BatchNormalization(axis = 1)(con)
+    #con = DepthwiseConv2D((1, Colors), use_bias = False, depth_multiplier = D,
+    #                      depthwise_constraint = max_norm(1.), data_format = 'channels_first')(con)
+    #con = BatchNormalization(axis = 1)(con)
+    #con = Activation('elu')(con)
+    #con = MaxPooling2D((1, 4), data_format = 'channels_first')(con)
+    #con = dropoutType(dropoutRate)(con)
+    con = SeparableConv2D(5*F2, (1, 16), padding = 'same', use_bias = False)(con)
+    con = BatchNormalization(axis = -1)(con)
     con = Activation('elu')(con)
-    con = AveragePooling2D((4, 1), data_format = 'channels_first')(con)
-    con = SeparableConv2D(F2, (16, 1), padding = 'same', use_bias = False, data_format = 'channels_first')(con)
-    con = BatchNormalization(axis = 1)(con)
-    con = Activation('elu')(con)
-    con = AveragePooling2D((4, 1), data_format = 'channels_first')(con)
+    con = AveragePooling2D((1, 8))(con)
     con = dropoutType(dropoutRate)(con)
     flatten = Flatten()(con)
 
@@ -244,7 +251,7 @@ def _old_BIEEGConvNet(n_classes, Chans, Samples, Colors, H, W,
 
 def EEGNet(nb_classes, Chans = 64, Samples = 128, 
              dropoutRate = 0.5, kernLength = 64, F1 = 8, 
-             D = 2, F2 = 16, norm_rate = 0.25, dropoutType = 'Dropout'):
+             D = 4, F2 = 32, norm_rate = 0.25, dropoutType = 'Dropout'):
     """ Keras Implementation of EEGNet
     http://iopscience.iop.org/article/10.1088/1741-2552/aace8c/meta
 
@@ -319,18 +326,18 @@ def EEGNet(nb_classes, Chans = 64, Samples = 128,
     ##################################################################
     block1       = Conv2D(F1, (1, kernLength), padding = 'same',
                                    use_bias = False)(input1)
-    block1       = BatchNormalization(axis = 1)(block1)
+    block1       = BatchNormalization(axis = -1)(block1)
     block1       = DepthwiseConv2D((Chans, 1), use_bias = False, 
                                    depth_multiplier = D,
                                    depthwise_constraint = max_norm(1.))(block1)
-    block1       = BatchNormalization(axis = 1)(block1)
+    block1       = BatchNormalization(axis = -1)(block1)
     block1       = Activation('elu')(block1)
     block1       = AveragePooling2D((1, 4))(block1)
     block1       = dropoutType(dropoutRate)(block1)
     
     block2       = SeparableConv2D(F2, (1, 16), padding = 'same', 
                                    use_bias = False)(block1)
-    block2       = BatchNormalization(axis = 1)(block2)
+    block2       = BatchNormalization(axis = -1)(block2)
     block2       = Activation('elu')(block2)
     block2       = AveragePooling2D((1, 8))(block2)
     block2       = dropoutType(dropoutRate)(block2)
@@ -376,28 +383,28 @@ def DeepConvNet(nb_classes, Chans = 64, Samples = 256,
                                  kernel_constraint = max_norm(2., axis=(0,1,2)))(input_main)
     block1       = Conv2D(25, (Chans, 1),
                                  kernel_constraint = max_norm(2., axis=(0,1,2)))(block1)
-    block1       = BatchNormalization(axis=1, epsilon=1e-05, momentum=0.1)(block1)
+    block1       = BatchNormalization(axis=-1, epsilon=1e-05, momentum=0.1)(block1)
     block1       = Activation('elu')(block1)
     block1       = MaxPooling2D(pool_size=(1, 2), strides=(1, 2))(block1)
     block1       = Dropout(dropoutRate)(block1)
   
     block2       = Conv2D(50, (1, 5),
                                  kernel_constraint = max_norm(2., axis=(0,1,2)))(block1)
-    block2       = BatchNormalization(axis=1, epsilon=1e-05, momentum=0.1)(block2)
+    block2       = BatchNormalization(axis=-1, epsilon=1e-05, momentum=0.1)(block2)
     block2       = Activation('elu')(block2)
     block2       = MaxPooling2D(pool_size=(1, 2), strides=(1, 2))(block2)
     block2       = Dropout(dropoutRate)(block2)
     
     block3       = Conv2D(100, (1, 5),
                                  kernel_constraint = max_norm(2., axis=(0,1,2)))(block2)
-    block3       = BatchNormalization(axis=1, epsilon=1e-05, momentum=0.1)(block3)
+    block3       = BatchNormalization(axis=-1, epsilon=1e-05, momentum=0.1)(block3)
     block3       = Activation('elu')(block3)
     block3       = MaxPooling2D(pool_size=(1, 2), strides=(1, 2))(block3)
     block3       = Dropout(dropoutRate)(block3)
     
     block4       = Conv2D(200, (1, 5),
                                  kernel_constraint = max_norm(2., axis=(0,1,2)))(block3)
-    block4       = BatchNormalization(axis=1, epsilon=1e-05, momentum=0.1)(block4)
+    block4       = BatchNormalization(axis=-1, epsilon=1e-05, momentum=0.1)(block4)
     block4       = Activation('elu')(block4)
     block4       = MaxPooling2D(pool_size=(1, 2), strides=(1, 2))(block4)
     block4       = Dropout(dropoutRate)(block4)
@@ -450,7 +457,7 @@ def ShallowConvNet(nb_classes, Chans = 64, Samples = 128, dropoutRate = 0.5):
                                  kernel_constraint = max_norm(2., axis=(0,1,2)))(input_main)
     block1       = Conv2D(40, (Chans, 1), use_bias=False, 
                           kernel_constraint = max_norm(2., axis=(0,1,2)))(block1)
-    block1       = BatchNormalization(axis=1, epsilon=1e-05, momentum=0.1)(block1)
+    block1       = BatchNormalization(axis=-1, epsilon=1e-05, momentum=0.1)(block1)
     block1       = Activation(square)(block1)
     block1       = AveragePooling2D(pool_size=(1, 35), strides=(1, 7))(block1)
     block1       = Activation(log)(block1)
