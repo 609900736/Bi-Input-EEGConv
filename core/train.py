@@ -13,7 +13,7 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint
 
 def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250, 
                  batch_size=10, epochs=500, verbose=2, patience=100, 
-                 drawflag=False, restate=True, prep=True):
+                 drawflag=False, restate=True, prep=False):
     Samples = (end-start)*srate
     if prep:
         pp = '_pp'
@@ -93,22 +93,22 @@ def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250,
         plt.show()
 
 
-def train_rawEEGConvNet(n_classes, Colors=5, Chans=22, start=0, end=4, 
+def train_rawEEGConvNet(n_classes, Chans=22, start=0, end=4, Colors=1,
                         srate=250, batch_size=10, epochs=500, verbose=2, 
                         patience=100, drawflag=False, restate=True, 
-                        prep=True):
+                        prep=False):
     Samples = (end-start)*srate
     if prep:
         pp = '_pp'
     else:
         pp = ''
         
-    model = rawEEGConvModel(Colors=Colors,Chans=Chans,Samples=Samples)
+    model = rawEEGConvModel(Chans=Chans,Samples=Samples,Colors=Colors)
     model.summary()
     # export graph of the model
     tf.keras.utils.plot_model(model, 'rawEEGConvModel.png', show_shapes=True)
 
-    model = rawEEGConvNet(n_classes,model,Colors=Colors,Chans=Chans,Samples=Samples)
+    model = rawEEGConvNet(n_classes,model,Chans=Chans,Samples=Samples,Colors=Colors)
     model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss=tf.keras.losses.sparse_categorical_crossentropy,
                   metrics=['accuracy'])

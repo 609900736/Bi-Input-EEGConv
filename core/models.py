@@ -46,6 +46,43 @@ def rawEEGConvModel(Chans, Samples, Colors, dropoutRate = 0.5,
         raise ValueError('dropoutType must be one of SpatialDropout2D, '
                          'SpatialDropout3D or Dropout, passed as a string.')
     # Learn from raw EEG signals
+    input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
+    s = Conv2D(F1, (1, kernLength), padding = 'same', use_bias = False)(input_s)
+    s = BatchNormalization(axis = -1)(s)
+    s = DepthwiseConv2D((Chans, 1), use_bias = False, depth_multiplier = D,
+                        depthwise_constraint = max_norm(1.))(s)
+    s = BatchNormalization(axis = -1)(s)
+    s = Activation('elu')(s)
+    s = AveragePooling2D((1, 4))(s)
+    s = dropoutType(dropoutRate)(s)
+    s = SeparableConv2D(F2, (1, 16), padding = 'same', use_bias = False)(s)
+    s = BatchNormalization(axis = -1)(s)
+    s = Activation('elu')(s)
+    s = AveragePooling2D((1, 8))(s)
+    s = dropoutType(dropoutRate)(s)
+    flatten = Flatten()(con)
+
+    return Model(inputs=input_s,outputs=flatten)
+
+
+def _old_rawEEGConvModel(Chans, Samples, Colors, dropoutRate = 0.5,
+                         kernLength = 64, F1 = 8, D = 2, F2 = 16, 
+                         dtype = tf.float32, dropoutType = 'Dropout'):
+    """
+    for weight reusing
+
+    see BIEEGConvNet
+    """
+    if dropoutType == 'SpatialDropout2D':
+        dropoutType = SpatialDropout2D
+    elif dropoutType == 'SpatialDropout3D':
+        dropoutType = SpatialDropout3D
+    elif dropoutType == 'Dropout':
+        dropoutType = Dropout
+    else:
+        raise ValueError('dropoutType must be one of SpatialDropout2D, '
+                         'SpatialDropout3D or Dropout, passed as a string.')
+    # Learn from raw EEG signals
     l_m = []
     input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
     for i in range(Colors):
@@ -58,11 +95,11 @@ def rawEEGConvModel(Chans, Samples, Colors, dropoutRate = 0.5,
         s = Activation('elu')(s)
         s = AveragePooling2D((1, 4))(s)
         s = dropoutType(dropoutRate)(s)
-        #s = SeparableConv2D(F2, (1, 16), padding = 'same', use_bias = False)(s)
-        #s = BatchNormalization(axis = -1)(s)
-        #s = Activation('elu')(s)
-        #s = AveragePooling2D((1, 8))(s)
-        #s = dropoutType(dropoutRate)(s)
+        s = SeparableConv2D(F2, (1, 16), padding = 'same', use_bias = False)(s)
+        s = BatchNormalization(axis = -1)(s)
+        s = Activation('elu')(s)
+        s = AveragePooling2D((1, 8))(s)
+        s = dropoutType(dropoutRate)(s)
         model = Model(inputs=input,outputs=s)
         l_m.append(model)
     l_s = []
@@ -80,12 +117,13 @@ def rawEEGConvModel(Chans, Samples, Colors, dropoutRate = 0.5,
     #                      depthwise_constraint = max_norm(1.), data_format = 'channels_first')(con)
     #con = BatchNormalization(axis = 1)(con)
     #con = Activation('elu')(con)
-    #con = MaxPooling2D((1, 4), data_format = 'channels_first')(con)
+    #con = AveragePooling2D((1, F2), data_format = 'channels_first')(con)
     #con = dropoutType(dropoutRate)(con)
-    con = SeparableConv2D(5*F2, (1, 16), padding = 'same', use_bias = False)(con)
+    con = Conv2D(F2, (1, 1), padding = 'same', use_bias = False)(con)
     con = BatchNormalization(axis = -1)(con)
     con = Activation('elu')(con)
-    con = AveragePooling2D((1, 8))(con)
+    #con = AveragePooling2D((1, 2))(con)
+    #con = AveragePooling2D((1, 5), data_format = 'channels_first')(con)
     con = dropoutType(dropoutRate)(con)
     flatten = Flatten()(con)
 
@@ -131,7 +169,7 @@ def graphEEGConvModel(Colors, Samples, H, W, dropoutRate = 0.5,
     return Model(inputs=input_g,outputs=flatten)
 
 
-def rawEEGConvNet(n_classes, model, Colors=16, Chans=22, 
+def rawEEGConvNet(n_classes, model, Colors=1, Chans=22, 
                   Samples=1000, norm_rate=0.25, dtype=tf.float32):
     # Learn from raw EEG signals
     input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)

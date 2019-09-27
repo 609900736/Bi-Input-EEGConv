@@ -223,7 +223,7 @@ def load_or_generate_images(file_path, average_image=3):
     :param average_image: average_image 1 for CNN model only, 2 for multi-frame model 
                         sucn as lstm, 3 for both.
 
-    :return:            Tensor of size [window_size, samples, W, H, channel] containing generated
+    :return:            Tensor of size [n_trials, H, W, n_samples, n_colors] containing generated
                         images.
     """
     print('-'*100)
@@ -390,17 +390,33 @@ def interestingband(data, srate=250):
     Output:
         IBdata  : np.array, data after filter-bank, shapes as [n_trials, n_channels, n_samples, n_colors]
     '''
+    eps = 1e-9
     IBdata = []
-    b, a = signal.butter(4, [4/srate*2, 8/srate*2], 'bandpass')# theta
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
-    b, a = signal.butter(4, [8/srate*2, 13/srate*2], 'bandpass')# alpha
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
-    b, a = signal.butter(4, [14/srate*2, 30/srate*2], 'bandpass')# beta
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
-    b, a = signal.butter(4, [30/srate*2, 40/srate*2], 'bandpass')# low gamma
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
-    b, a = signal.butter(4, [71/srate*2, 91/srate*2], 'bandpass')# high gamma
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1))
+    b, a = signal.butter(1, [4, 8], 'bandpass', fs=srate)# theta
+    z, p, k = signal.tf2zpk(b, a)
+    r = np.max(np.abs(p))
+    approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
+    b, a = signal.butter(2, [8, 13], 'bandpass', fs=srate)# alpha
+    z, p, k = signal.tf2zpk(b, a)
+    r = np.max(np.abs(p))
+    approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
+    b, a = signal.butter(3, [14, 30], 'bandpass', fs=srate)# beta
+    z, p, k = signal.tf2zpk(b, a)
+    r = np.max(np.abs(p))
+    approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
+    b, a = signal.butter(4, [30, 40], 'bandpass', fs=srate)# low gamma
+    z, p, k = signal.tf2zpk(b, a)
+    r = np.max(np.abs(p))
+    approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
+    b, a = signal.butter(4, [71, 91], 'bandpass', fs=srate)# high gamma
+    z, p, k = signal.tf2zpk(b, a)
+    r = np.max(np.abs(p))
+    approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
     #now np.array(IBdata) shapes as[n_colors, n_trials, n_channels, n_samples]
     IBdata = np.swapaxes(np.array(IBdata), 0, 1)
     IBdata = np.swapaxes(IBdata, 1, 2)
@@ -425,7 +441,7 @@ def load_or_gen_interestingband_data(filepath, start=0, end=4, srate=250):
 
 
 if __name__=='__main__':
-    t = np.linspace(0, 1, 1000, False)  # 1 second
+    t = np.linspace(0, 1, 2000, False)  # 1 second
     sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)    # 构造10hz和20hz的两个信号
     sig = np.array([[sig,sig],[sig,sig]])
     print(sig.shape)
@@ -435,8 +451,13 @@ if __name__=='__main__':
     ax1.axis([0, 1, -2, 2])
 
     
-    sos = signal.butter(10, 15, 'hp', fs=1000, output='sos')     #采样率为1000hz，带宽为15hz，输出sos
-    filtered = signal.sosfilt(sos, sig)             #将信号和通过滤波器作用，得到滤波以后的结果。在这里sos有点像冲击响应，这个函数有点像卷积的作用。
+    b, a = signal.butter(4, [14,30], 'bandpass', fs=2000, output='ba')     #采样率为1000hz，带宽为15hz，输出ba
+    z, p, k = signal.tf2zpk(b, a)
+    eps = 1e-9
+    r = np.max(np.abs(p))
+    approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    print(approx_impulse_len)
+    filtered = signal.filtfilt(b, a, sig, method='gust', irlen=approx_impulse_len)             #将信号和通过滤波器作用，得到滤波以后的结果。在这里sos有点像冲击响应，这个函数有点像卷积的作用。
     ax2.plot(t, filtered[0,0,:])
     ax2.set_title('After 15 Hz high-pass filter')
     ax2.axis([0, 1, -2, 2])
