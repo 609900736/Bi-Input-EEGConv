@@ -289,7 +289,7 @@ def _old_BIEEGConvNet(n_classes, Chans, Samples, Colors, H, W,
 
 def EEGNet(nb_classes, Chans = 64, Samples = 128, 
              dropoutRate = 0.5, kernLength = 64, F1 = 8, 
-             D = 4, F2 = 32, norm_rate = 0.25, dropoutType = 'Dropout'):
+             D = 2, F2 = 16, norm_rate = 0.25, dropoutType = 'Dropout'):
     """ Keras Implementation of EEGNet
     http://iopscience.iop.org/article/10.1088/1741-2552/aace8c/meta
 

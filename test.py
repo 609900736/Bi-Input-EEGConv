@@ -17,7 +17,7 @@ from tensorflow.python.keras import backend as K
 
 srate = 250
 start = 0
-end = 4
+end = 3
 prep = False
 Samples = (end-start)*srate
 K.set_image_data_format('channels_last')
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         y_test = load_data(filepath,label=True)
         y_test -= 1
 
-        filepath = os.path.join('model','2019_9_27_11_53_18'+'_A0'+str(i)+
+        filepath = os.path.join('model','2019_9_29_18_33_7'+'_A0'+str(i)+
                                 'T_EEGNet.h5')
         model = load_model(filepath)
         #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),

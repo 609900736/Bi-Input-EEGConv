@@ -11,7 +11,7 @@ from core.models import EEGNet, rawEEGConvModel, rawEEGConvNet, graphEEGConvMode
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 
 
-def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250, 
+def train_EEGNet(n_classes, Chans=22, start=0, end=3, srate=250, 
                  batch_size=10, epochs=500, verbose=2, patience=100, 
                  drawflag=False, restate=True, prep=False):
     Samples = (end-start)*srate
@@ -27,7 +27,7 @@ def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250,
     # export graph of the model
     tf.keras.utils.plot_model(model, 'EEGNet.png', show_shapes=True)
 
-    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-2, 
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
                                                      patience=patience, verbose=0, mode='auto')
 
     tm = time.localtime()
@@ -93,7 +93,7 @@ def train_EEGNet(n_classes, Chans=22, start=0, end=4, srate=250,
         plt.show()
 
 
-def train_rawEEGConvNet(n_classes, Chans=22, start=0, end=4, Colors=1,
+def train_rawEEGConvNet(n_classes, Chans=22, start=0, end=3, Colors=1,
                         srate=250, batch_size=10, epochs=500, verbose=2, 
                         patience=100, drawflag=False, restate=True, 
                         prep=False):
@@ -116,7 +116,7 @@ def train_rawEEGConvNet(n_classes, Chans=22, start=0, end=4, Colors=1,
     model.summary()
     tf.keras.utils.plot_model(model, 'rawEEGConvNet.png', show_shapes=True)
 
-    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-2, 
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
                                                      patience=patience, verbose=0, mode='auto')
 
     tm = time.localtime()
@@ -203,7 +203,7 @@ def train_graphEEGConvNet(n_classes, Colors=8, Chans=22, W=16, H=16,
     model.summary()
     tf.keras.utils.plot_model(model, 'graphEEGConvNet.png', show_shapes=True)
 
-    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-2, 
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
                                                      patience=patience, verbose=0, mode='auto')
 
     tm = time.localtime()
@@ -291,7 +291,7 @@ def train_BiInputsEEGConvNet(n_classes, Colors=8, Chans=22, W=16, H=16,
     net_s.summary()
     tf.keras.utils.plot_model(net_s, 'rawEEGConvNet.png', show_shapes=True)
 
-    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=1e-2, 
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, 
                                                      patience=patience, verbose=0, mode='auto')
 
     tm = time.localtime()

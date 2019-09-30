@@ -1,6 +1,7 @@
 #coding:utf-8
 
 import os
+import pywt
 import math as m
 import numpy as np
 import scipy.io as sio
@@ -437,6 +438,13 @@ def load_or_gen_interestingband_data(filepath, start=0, end=4, srate=250):
         sio.savemat(filepath[:-4]+'_ib.mat',{'ib':data})
         print('Save interestingband data[\'ib\'] complete. To %s' %(filepath[:-4]+'_ib.mat'))
 
+    return data
+
+
+def dwt(data):
+    signal.cwt()
+    signal.convolve()
+    pywt.cwt()
     return data
 
 
