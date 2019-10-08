@@ -133,7 +133,7 @@ def gen_images(locs, features, n_gridpoints, normalize=True,
             feat_array_temp[c] = np.append(feat_array_temp[c], np.zeros((n_samples, 4)), axis=1)
 
     # Interpolating
-    for i in xrange(n_samples):
+    for i in range(n_samples):
         for c in range(n_colors):
             temp_interp[c][i, :, :] = griddata(locs, feat_array_temp[c][i, :], (grid_x, grid_y),
                                                method='cubic', fill_value=np.nan)
@@ -174,26 +174,6 @@ def augment_EEG(data, stdMult, pca=False, n_components=2):
         for f, feat in enumerate(data.transpose()):
             augData[:, f] = feat + np.random.normal(scale=stdMult*np.std(feat), size=feat.size)
     return augData
-
-
-def augment_EEG_image(image, std_mult, pca=False, n_components=2):
-    """
-    Augment data by adding normal noise to each feature.
-
-    :param image: EEG feature data as a a colored image [n_samples, n_colors, W, H]
-    :param std_mult: Multiplier for std of added noise
-    :param pca: if True will perform PCA on data and add noise proportional to PCA components.
-    :param n_components: Number of components to consider when using PCA.
-    :return: Augmented data as a matrix (n_samples x n_features)
-    """
-    augData = np.zeros((data.shape[0], data.shape[1], data.shape[2] * data.shape[3]))
-    for c in xrange(image.shape[1]):
-        reshData = np.reshape(data['featMat'][:, c, :, :], (data['featMat'].shape[0], -1))
-        if pca:
-            augData[:, c, :] = augment_EEG(reshData, std_mult, pca=True, n_components=n_components)
-        else:
-            augData[:, c, :] = augment_EEG(reshData, std_mult, pca=False)
-    return np.reshape(augData, data['featMat'].shape)
 
 
 def reformatInput(data, labels, indices):
@@ -237,7 +217,7 @@ def load_or_generate_images(file_path, average_image=3):
         locs_2d.append(azim_proj(e))
 
     # Class labels should start from 0
-    data = load_data('SampleData/FeatureMat_timeWin.mat')   # 2670*1344 和 2670*1
+    feats = load_data('SampleData/FeatureMat_timeWin.mat')   # 2670*1344 和 2670*1
     labels = load_data('SampleData/FeatureMat_timeWin.mat')
     
 
@@ -257,7 +237,7 @@ def load_or_generate_images(file_path, average_image=3):
                     temp += feats[:, i*192:(i+1)*192]
             av_feats = temp / 7
             images_average = gen_images(np.array(locs_2d), av_feats, 32, normalize=False)
-            scipy.io.savemat( file_path+'images_average.mat', {'images_average':images_average})
+            sio.savemat( file_path+'images_average.mat', {'images_average':images_average})
             print('Saving images_average done!')
         
         del feats
@@ -277,7 +257,7 @@ def load_or_generate_images(file_path, average_image=3):
                     np.array(locs_2d),
                     feats[:, i*192:(i+1)*192], 32, normalize=False) for i in range(feats.shape[1]//192)
                 ])
-            scipy.io.savemat(file_path + 'images_timewin.mat', {'images_timewin':images_timewin})
+            sio.savemat(file_path + 'images_timewin.mat', {'images_timewin':images_timewin})
             print('Saving images for all time windows done!')
         
         del feats
@@ -300,7 +280,7 @@ def load_or_generate_images(file_path, average_image=3):
                     temp += feats[:, i*192:(i+1)*192]
             av_feats = temp / 7
             images_average = gen_images(np.array(locs_2d), av_feats, 32, normalize=False)
-            scipy.io.savemat( file_path+'images_average.mat', {'images_average':images_average})
+            sio.savemat( file_path+'images_average.mat', {'images_average':images_average})
             print('Saving images_average done!')
 
         if os.path.exists(file_path + 'images_timewin.mat'):
@@ -315,7 +295,7 @@ def load_or_generate_images(file_path, average_image=3):
                     np.array(locs_2d),
                     feats[:, i*192:(i+1)*192], 32, normalize=False) for i in range(feats.shape[1]//192)
                 ])
-            scipy.io.savemat(file_path + 'images_timewin.mat', {'images_timewin':images_timewin})
+            sio.savemat(file_path + 'images_timewin.mat', {'images_timewin':images_timewin})
             print('Saving images for all time windows done!')
 
         del feats
@@ -441,35 +421,41 @@ def load_or_gen_interestingband_data(filepath, start=0, end=4, srate=250):
     return data
 
 
-def dwt(data):
-    signal.cwt()
-    signal.convolve()
-    pywt.cwt()
+# In order to gain energy-spectrum, cwt is needed. And dwt is used for signal deposition. 
+def cwt(data):
+    signal.cwt()# lack of defined wavelets, return conv
+    #signal.dwt()# tan90
+    signal.daub()
+    pywt.cwt()# return coef
+    pywt.dwt()
+    
     return data
 
 
 if __name__=='__main__':
-    t = np.linspace(0, 1, 2000, False)  # 1 second
-    sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)    # 构造10hz和20hz的两个信号
-    sig = np.array([[sig,sig],[sig,sig]])
-    print(sig.shape)
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    ax1.plot(t, sig[0,0,:])
-    ax1.set_title('10 Hz and 20 Hz sinusoids')
-    ax1.axis([0, 1, -2, 2])
+    print(pywt.wavelist())
+    print(pywt.ContinuousWavelet('dump'))
+    #t = np.linspace(0, 1, 2000, False)  # 1 second
+    #sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)    # 构造10hz和20hz的两个信号
+    #sig = np.array([[sig,sig],[sig,sig]])
+    #print(sig.shape)
+    #fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    #ax1.plot(t, sig[0,0,:])
+    #ax1.set_title('10 Hz and 20 Hz sinusoids')
+    #ax1.axis([0, 1, -2, 2])
 
     
-    b, a = signal.butter(4, [14,30], 'bandpass', fs=2000, output='ba')     #采样率为1000hz，带宽为15hz，输出ba
-    z, p, k = signal.tf2zpk(b, a)
-    eps = 1e-9
-    r = np.max(np.abs(p))
-    approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
-    print(approx_impulse_len)
-    filtered = signal.filtfilt(b, a, sig, method='gust', irlen=approx_impulse_len)             #将信号和通过滤波器作用，得到滤波以后的结果。在这里sos有点像冲击响应，这个函数有点像卷积的作用。
-    ax2.plot(t, filtered[0,0,:])
-    ax2.set_title('After 15 Hz high-pass filter')
-    ax2.axis([0, 1, -2, 2])
-    ax2.set_xlabel('Time [seconds]')
-    plt.tight_layout()
-    plt.show()
-    print('BiInputConv.core.utils')
+    #b, a = signal.butter(4, [14,30], 'bandpass', fs=2000, output='ba')     #采样率为1000hz，带宽为15hz，输出ba
+    #z, p, k = signal.tf2zpk(b, a)
+    #eps = 1e-9
+    #r = np.max(np.abs(p))
+    #approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
+    #print(approx_impulse_len)
+    #filtered = signal.filtfilt(b, a, sig, method='gust', irlen=approx_impulse_len)             #将信号和通过滤波器作用，得到滤波以后的结果。在这里sos有点像冲击响应，这个函数有点像卷积的作用。
+    #ax2.plot(t, filtered[0,0,:])
+    #ax2.set_title('After 15 Hz high-pass filter')
+    #ax2.axis([0, 1, -2, 2])
+    #ax2.set_xlabel('Time [seconds]')
+    #plt.tight_layout()
+    #plt.show()
+    #print('BiInputConv.core.utils')
