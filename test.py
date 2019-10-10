@@ -1,4 +1,4 @@
-#coding:utf-8
+# coding:utf-8
 import core.models as models
 import core.train as train
 import core.utils as utils
@@ -19,7 +19,7 @@ srate = 250
 start = 0
 end = 3
 prep = False
-Samples = (end-start)*srate
+Samples = (end - start) * srate
 K.set_image_data_format('channels_last')
 
 if __name__ == '__main__':
@@ -28,20 +28,22 @@ if __name__ == '__main__':
     else:
         pp = ''
 
-    for i in range(1,10):
-        filepath = os.path.join('data','Test','A0'+str(i)+'E'+pp+'.mat')
-        x_test = load_data(filepath,label=False)
-        x_test = np.expand_dims(x_test[:,:,start*srate:end*srate],-1)
-        filepath = os.path.join('data','Test','A0'+str(i)+'E_label'+pp+'.mat')
-        y_test = load_data(filepath,label=True)
+    for i in range(1, 10):
+        filepath = os.path.join('data', 'Test',
+                                'A0' + str(i) + 'E' + pp + '.mat')
+        x_test = load_data(filepath, label=False)
+        x_test = np.expand_dims(x_test[:, :, start * srate:end * srate], -1)
+        filepath = os.path.join('data', 'Test',
+                                'A0' + str(i) + 'E_label' + pp + '.mat')
+        y_test = load_data(filepath, label=True)
         y_test -= 1
 
-        filepath = os.path.join('model','2019_9_29_18_33_7'+'_A0'+str(i)+
-                                'T_EEGNet.h5')
+        filepath = os.path.join(
+            'model', '2019_10_10_17_37_14' + '_A0' + str(i) + 'T_EEGNet.h5')
         model = load_model(filepath)
         #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
         #          loss=tf.keras.losses.sparse_categorical_crossentropy,
         #          metrics=['accuracy'])
-        model.evaluate(x_test,y_test,batch_size=10,verbose=2)
+        model.evaluate(x_test, y_test, batch_size=10, verbose=2)
 
     pass

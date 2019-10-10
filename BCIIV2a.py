@@ -17,7 +17,7 @@ srate = 250
 #                                               inter_op_parallelism_threads=2)))
 K.set_image_data_format('channels_last')
 
-if __name__=='__main__':
-    train_EEGNet(4, srate=srate, epochs=600, patience=200, prep=False)
-    #train_rawEEGConvNet(4, srate=srate)
+if __name__ == '__main__':
+    train_EEGNet(4, srate=srate, epochs=600, patience=200, prep=False, restate=False)
+    # train_rawEEGConvNet(4, srate=srate, epochs=600, patience=200, prep=False)
     pass

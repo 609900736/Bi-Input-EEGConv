@@ -1,4 +1,4 @@
-#coding:utf-8
+# -*- coding:utf-8 -*-
 
 import os
 import pywt
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
-from functools import reduce
+# from functools import reduce
 
 
 def cart2sph(x, y, z):
@@ -22,9 +22,9 @@ def cart2sph(x, y, z):
     :return: radius, elevation, azimuth
     """
     x2_y2 = x**2 + y**2
-    r = m.sqrt(x2_y2 + z**2)                    # r
-    elev = m.atan2(z, m.sqrt(x2_y2))            # Elevation
-    az = m.atan2(y, x)                          # Azimuth
+    r = m.sqrt(x2_y2 + z**2)  # r
+    elev = m.atan2(z, m.sqrt(x2_y2))  # Elevation
+    az = m.atan2(y, x)  # Azimuth
     return r, elev, az
 
 
@@ -40,11 +40,11 @@ def pol2cart(theta, rho):
 
 def azim_proj(pos):
     """
-    Computes the Azimuthal Equidistant Projection of input point in 3D Cartesian Coordinates.
-    Imagine a plane being placed against (tangent to) a globe. If
-    a light source inside the globe projects the graticule onto
-    the plane the result would be a planar, or azimuthal, map
-    projection.
+    Computes the Azimuthal Equidistant Projection of input point in
+    3D Cartesian Coordinates. Imagine a plane being placed against
+    (tangent to) a globe. If a light source inside the globe projects
+    the graticule onto the plane the result would be a planar, or
+    azimuthal, map projection.
 
     :param pos: position in 3D Cartesian coordinates    [x, y, z]
     :return: projected coordinates using Azimuthal Equidistant Projection
@@ -54,7 +54,7 @@ def azim_proj(pos):
 
 
 def load_data(data_file, label=True):
-    """                                               
+    """
     Loads the data from MAT file. MAT file would be two kinds.
     'data.mat' which contains the feature matrix in the shape
     of [n_trials, n_channels, n_samples] and 'label.mat' which
@@ -67,17 +67,25 @@ def load_data(data_file, label=True):
     print("Loading data from %s" % (data_file))
     dataMat = sio.loadmat(data_file, mat_dtype=True)
     if label:
-        print("Data loading complete. Shape is %r" % (dataMat['classlabel'].shape,))
+        print("Data loading complete. Shape is %r" %
+              (dataMat['classlabel'].shape, ))
         return dataMat['classlabel']
-    else:#[n_channels,n_samples,n_trials]
-        dataMat['s'] = dataMat['s'].swapaxes(1,2)
-        dataMat['s'] = dataMat['s'].swapaxes(0,1)
-        print("Data loading complete. Shape is %r" % (dataMat['s'].shape,))
+    else:  # [n_channels,n_samples,n_trials]
+        dataMat['s'] = dataMat['s'].swapaxes(1, 2)
+        dataMat['s'] = dataMat['s'].swapaxes(0, 1)
+        print("Data loading complete. Shape is %r" % (dataMat['s'].shape, ))
         return dataMat['s']
 
 
-def gen_images(locs, features, n_gridpoints, normalize=True,
-               augment=False, pca=False, std_mult=0.1, n_components=2, edgeless=False):
+def gen_images(locs,
+               features,
+               n_gridpoints,
+               normalize=True,
+               augment=False,
+               pca=False,
+               std_mult=0.1,
+               n_components=2,
+               edgeless=False):
     """
     Generates EEG images given electrode locations in 2D space and multiple feature values for each electrode
 
@@ -99,27 +107,34 @@ def gen_images(locs, features, n_gridpoints, normalize=True,
                         images.
     """
     feat_array_temp = []
-    nElectrodes = locs.shape[0]     # Number of electrodes
+    nElectrodes = locs.shape[0]  # Number of electrodes
 
     # Test whether the feature vector length is divisible by number of electrodes
     assert features.shape[1] % nElectrodes == 0
     n_colors = features.shape[1] / nElectrodes
     for c in range(n_colors):
-        feat_array_temp.append(features[:, c * nElectrodes : nElectrodes * (c+1)])
+        feat_array_temp.append(features[:, c * nElectrodes:nElectrodes *
+                                        (c + 1)])
     if augment:
         if pca:
             for c in range(n_colors):
-                feat_array_temp[c] = augment_EEG(feat_array_temp[c], std_mult, pca=True, n_components=n_components)
+                feat_array_temp[c] = augment_EEG(feat_array_temp[c],
+                                                 std_mult,
+                                                 pca=True,
+                                                 n_components=n_components)
         else:
             for c in range(n_colors):
-                feat_array_temp[c] = augment_EEG(feat_array_temp[c], std_mult, pca=False, n_components=n_components)
+                feat_array_temp[c] = augment_EEG(feat_array_temp[c],
+                                                 std_mult,
+                                                 pca=False,
+                                                 n_components=n_components)
     n_samples = features.shape[0]
 
     # Interpolate the values
-    grid_x, grid_y = np.mgrid[
-                     min(locs[:, 0]):max(locs[:, 0]):n_gridpoints*1j,
-                     min(locs[:, 1]):max(locs[:, 1]):n_gridpoints*1j
-                     ]
+    grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):n_gridpoints *
+                              1j,
+                              min(locs[:, 1]):max(locs[:, 1]):n_gridpoints *
+                              1j]
     temp_interp = []
     for c in range(n_colors):
         temp_interp.append(np.zeros([n_samples, n_gridpoints, n_gridpoints]))
@@ -128,15 +143,23 @@ def gen_images(locs, features, n_gridpoints, normalize=True,
     if edgeless:
         min_x, min_y = np.min(locs, axis=0)
         max_x, max_y = np.max(locs, axis=0)
-        locs = np.append(locs, np.array([[min_x, min_y], [min_x, max_y], [max_x, min_y], [max_x, max_y]]), axis=0)
+        locs = np.append(locs,
+                         np.array([[min_x, min_y], [min_x, max_y],
+                                   [max_x, min_y], [max_x, max_y]]),
+                         axis=0)
         for c in range(n_colors):
-            feat_array_temp[c] = np.append(feat_array_temp[c], np.zeros((n_samples, 4)), axis=1)
+            feat_array_temp[c] = np.append(feat_array_temp[c],
+                                           np.zeros((n_samples, 4)),
+                                           axis=1)
 
     # Interpolating
     for i in range(n_samples):
         for c in range(n_colors):
-            temp_interp[c][i, :, :] = griddata(locs, feat_array_temp[c][i, :], (grid_x, grid_y),
-                                               method='cubic', fill_value=np.nan)
+            temp_interp[c][i, :, :] = griddata(locs,
+                                               feat_array_temp[c][i, :],
+                                               (grid_x, grid_y),
+                                               method='cubic',
+                                               fill_value=np.nan)
         print('Interpolating {0}/{1}\r'.format(i + 1, n_samples), end='\r')
 
     # Normalizing
@@ -146,8 +169,9 @@ def gen_images(locs, features, n_gridpoints, normalize=True,
                 scale(temp_interp[c][~np.isnan(temp_interp[c])])
         temp_interp[c] = np.nan_to_num(temp_interp[c])
 
-    temp_interp = np.swapaxes(np.asarray(temp_interp), 0, 1)     # swap axes to have [samples, colors, W, H]
-    return 
+    temp_interp = np.swapaxes(np.asarray(temp_interp), 0,
+                              1)  # swap axes to have [samples, colors, W, H]
+    return
 
 
 def augment_EEG(data, stdMult, pca=False, n_components=2):
@@ -166,13 +190,16 @@ def augment_EEG(data, stdMult, pca=False, n_components=2):
         pca.fit(data)
         components = pca.components_
         variances = pca.explained_variance_ratio_
-        coeffs = np.random.normal(scale=stdMult, size=pca.n_components) * variances
+        coeffs = np.random.normal(scale=stdMult,
+                                  size=pca.n_components) * variances
         for s, sample in enumerate(data):
-            augData[s, :] = sample + (components * coeffs.reshape((n_components, -1))).sum(axis=0)
+            augData[s, :] = sample + (components * coeffs.reshape(
+                (n_components, -1))).sum(axis=0)
     else:
         # Add Gaussian noise with std determined by weighted std of each feature
         for f, feat in enumerate(data.transpose()):
-            augData[:, f] = feat + np.random.normal(scale=stdMult*np.std(feat), size=feat.size)
+            augData[:, f] = feat + np.random.normal(
+                scale=stdMult * np.std(feat), size=feat.size)
     return augData
 
 
@@ -189,25 +216,31 @@ def reformatInput(data, labels, indices):
     # shuffledIndices = np.random.permutation(len(trainIndices))
     # trainIndices = trainIndices[shuffledIndices]
     if data.ndim == 4:
-        return [(data[trainIndices], np.squeeze(labels[trainIndices]).astype(np.int32)),
-                (data[validIndices], np.squeeze(labels[validIndices]).astype(np.int32)),
-                (data[testIndices], np.squeeze(labels[testIndices]).astype(np.int32))]
+        return [(data[trainIndices],
+                 np.squeeze(labels[trainIndices]).astype(np.int32)),
+                (data[validIndices],
+                 np.squeeze(labels[validIndices]).astype(np.int32)),
+                (data[testIndices],
+                 np.squeeze(labels[testIndices]).astype(np.int32))]
     elif data.ndim == 5:
-        return [(data[:, trainIndices], np.squeeze(labels[trainIndices]).astype(np.int32)),
-                (data[:, validIndices], np.squeeze(labels[validIndices]).astype(np.int32)),
-                (data[:, testIndices], np.squeeze(labels[testIndices]).astype(np.int32))]
+        return [(data[:, trainIndices],
+                 np.squeeze(labels[trainIndices]).astype(np.int32)),
+                (data[:, validIndices],
+                 np.squeeze(labels[validIndices]).astype(np.int32)),
+                (data[:, testIndices],
+                 np.squeeze(labels[testIndices]).astype(np.int32))]
 
 
 def load_or_generate_images(file_path, average_image=3):
     """
     Generates EEG images
-    :param average_image: average_image 1 for CNN model only, 2 for multi-frame model 
+    :param average_image: average_image 1 for CNN model only, 2 for multi-frame model
                         sucn as lstm, 3 for both.
 
     :return:            Tensor of size [n_trials, H, W, n_samples, n_colors] containing generated
                         images.
     """
-    print('-'*100)
+    print('-' * 100)
     print('Loading original data...')
     locs = sio.loadmat('data/Neuroscan_locs_orig.mat')
     locs_3d = locs['A']
@@ -217,13 +250,14 @@ def load_or_generate_images(file_path, average_image=3):
         locs_2d.append(azim_proj(e))
 
     # Class labels should start from 0
-    feats = load_data('SampleData/FeatureMat_timeWin.mat')   # 2670*1344 和 2670*1
+    feats = load_data(
+        'SampleData/FeatureMat_timeWin.mat')  # 2670*1344 和 2670*1
     labels = load_data('SampleData/FeatureMat_timeWin.mat')
-    
 
-    if average_image == 1:   # for CNN only
+    if average_image == 1:  # for CNN only
         if os.path.exists(file_path + 'images_average.mat'):
-            images_average = sio.loadmat(file_path + 'images_average.mat')['images_average']
+            images_average = sio.loadmat(
+                file_path + 'images_average.mat')['images_average']
             print('\n')
             print('Load images_average done!')
         else:
@@ -232,41 +266,48 @@ def load_or_generate_images(file_path, average_image=3):
             # Find the average response over time windows
             for i in range(7):
                 if i == 0:
-                    temp  = feats[:, i*192:(i+1)*192]    # each window contains 64*3=192 data
+                    temp = feats[:, i * 192:(i + 1) *
+                                 192]  # each window contains 64*3=192 data
                 else:
-                    temp += feats[:, i*192:(i+1)*192]
+                    temp += feats[:, i * 192:(i + 1) * 192]
             av_feats = temp / 7
-            images_average = gen_images(np.array(locs_2d), av_feats, 32, normalize=False)
-            sio.savemat( file_path+'images_average.mat', {'images_average':images_average})
+            images_average = gen_images(np.array(locs_2d),
+                                        av_feats,
+                                        32,
+                                        normalize=False)
+            sio.savemat(file_path + 'images_average.mat',
+                        {'images_average': images_average})
             print('Saving images_average done!')
-        
         del feats
-        images_average = images_average[np.newaxis,:]
+        images_average = images_average[np.newaxis, :]
         print('The shape of images_average.shape', images_average.shape)
         return images_average, labels
-    
-    elif average_image == 2:    # for mulit-frame model such as LSTM
+    elif average_image == 2:  # for mulit-frame model such as LSTM
         if os.path.exists(file_path + 'images_timewin.mat'):
-            images_timewin = sio.loadmat(file_path + 'images_timewin.mat')['images_timewin']
-            print('\n')    
+            images_timewin = sio.loadmat(
+                file_path + 'images_timewin.mat')['images_timewin']
+            print('\n')
             print('Load images_timewin done!')
         else:
             print('Generating images for all time windows...')
             images_timewin = np.array([
-                gen_images(
-                    np.array(locs_2d),
-                    feats[:, i*192:(i+1)*192], 32, normalize=False) for i in range(feats.shape[1]//192)
-                ])
-            sio.savemat(file_path + 'images_timewin.mat', {'images_timewin':images_timewin})
+                gen_images(np.array(locs_2d),
+                           feats[:, i * 192:(i + 1) * 192],
+                           32,
+                           normalize=False)
+                for i in range(feats.shape[1] // 192)
+            ])
+            sio.savemat(file_path + 'images_timewin.mat',
+                        {'images_timewin': images_timewin})
             print('Saving images for all time windows done!')
-        
         del feats
-        print('The shape of images_timewin is', images_timewin.shape)   # (7, 2670, 32, 32, 3)
+        print('The shape of images_timewin is',
+              images_timewin.shape)  # (7, 2670, 32, 32, 3)
         return images_timewin, labels
-    
     else:
         if os.path.exists(file_path + 'images_average.mat'):
-            images_average = sio.loadmat(file_path + 'images_average.mat')['images_average']
+            images_average = sio.loadmat(
+                file_path + 'images_average.mat')['images_average']
             print('\n')
             print('Load images_average done!')
         else:
@@ -275,34 +316,44 @@ def load_or_generate_images(file_path, average_image=3):
             # Find the average response over time windows
             for i in range(7):
                 if i == 0:
-                    temp = feats[:, i*192:(i+1)*192]
+                    temp = feats[:, i * 192:(i + 1) * 192]
                 else:
-                    temp += feats[:, i*192:(i+1)*192]
+                    temp += feats[:, i * 192:(i + 1) * 192]
             av_feats = temp / 7
-            images_average = gen_images(np.array(locs_2d), av_feats, 32, normalize=False)
-            sio.savemat( file_path+'images_average.mat', {'images_average':images_average})
+            images_average = gen_images(np.array(locs_2d),
+                                        av_feats,
+                                        32,
+                                        normalize=False)
+            sio.savemat(file_path + 'images_average.mat',
+                        {'images_average': images_average})
             print('Saving images_average done!')
 
         if os.path.exists(file_path + 'images_timewin.mat'):
-            images_timewin = sio.loadmat(file_path + 'images_timewin.mat')['images_timewin']
-            print('\n')    
+            images_timewin = sio.loadmat(
+                file_path + 'images_timewin.mat')['images_timewin']
+            print('\n')
             print('Load images_timewin done!')
         else:
             print('\n')
             print('Generating images for all time windows...')
             images_timewin = np.array([
-                gen_images(
-                    np.array(locs_2d),
-                    feats[:, i*192:(i+1)*192], 32, normalize=False) for i in range(feats.shape[1]//192)
-                ])
-            sio.savemat(file_path + 'images_timewin.mat', {'images_timewin':images_timewin})
+                gen_images(np.array(locs_2d),
+                           feats[:, i * 192:(i + 1) * 192],
+                           32,
+                           normalize=False)
+                for i in range(feats.shape[1] // 192)
+            ])
+            sio.savemat(file_path + 'images_timewin.mat',
+                        {'images_timewin': images_timewin})
             print('Saving images for all time windows done!')
 
         del feats
-        images_average = images_average[np.newaxis,:]
+        images_average = images_average[np.newaxis, :]
         print('The shape of labels.shape', labels.shape)
-        print('The shape of images_average.shape', images_average.shape)    # (1, 2670, 32, 32, 3)
-        print('The shape of images_timewin is', images_timewin.shape)   # (7, 2670, 32, 32, 3)
+        print('The shape of images_average.shape',
+              images_average.shape)  # (1, 2670, 32, 32, 3)
+        print('The shape of images_timewin is',
+              images_timewin.shape)  # (7, 2670, 32, 32, 3)
         return images_average, images_timewin, labels
 
 
@@ -325,35 +376,39 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
     FBdata = []
     for beg in range(start, stop - window + 1, step):
         end = beg + window
-        b, a = signal.butter(4, [beg/srate*2, end/srate*2], 'bandpass')
+        b, a = signal.butter(4, [beg / srate * 2, end / srate * 2], 'bandpass')
         FBdata.append(signal.filtfilt(b, a, data, axis=-1))
     #now np.array(FBdata) shapes as[n_colors, n_trials, n_channels, n_samples]
     FBdata = np.swapaxes(np.array(FBdata), 0, 1)
     FBdata = np.swapaxes(FBdata, 1, 2)
     FBdata = np.swapaxes(FBdata, 2, 3)
-    print("Data filterbank complete. Shape is %r." % (FBdata.shape,))
+    print("Data filterbank complete. Shape is %r." % (FBdata.shape, ))
     return FBdata
 
 
 def load_or_gen_filterbank_data(filepath, start=0, end=4, srate=250):
-    if os.path.exists(filepath[:-4]+'_fb.mat'):
-        print('Loading data from %s' %(filepath[:-4]+'_fb.mat'))
-        data = sio.loadmat(filepath[:-4]+'_fb.mat')['fb']
-        print('Load filterbank data complete. Shape is %r.' %(data.shape,))
+    if os.path.exists(filepath[:-4] + '_fb.mat'):
+        print('Loading data from %s' % (filepath[:-4] + '_fb.mat'))
+        data = sio.loadmat(filepath[:-4] + '_fb.mat')['fb']
+        print('Load filterbank data complete. Shape is %r.' % (data.shape, ))
     else:
-        data = filterbank(load_data(filepath,label=False),srate=srate,step=4)
-        data = data[:,:,start*srate:end*srate,:]
-        print('Load filterbank data complete. Shape is %r.' %(data.shape,))
-        sio.savemat(filepath[:-4]+'_fb.mat',{'fb':data})
-        print('Save filterbank data[\'fb\'] complete. To %s' %(filepath[:-4]+'_fb.mat'))
+        data = filterbank(load_data(filepath, label=False),
+                          srate=srate,
+                          step=4)
+        data = data[:, :, start * srate:end * srate, :]
+        print('Load filterbank data complete. Shape is %r.' % (data.shape, ))
+        sio.savemat(filepath[:-4] + '_fb.mat', {'fb': data})
+        print('Save filterbank data[\'fb\'] complete. To %s' %
+              (filepath[:-4] + '_fb.mat'))
 
     return data
 
 
 def load_locs():
-    filepath = os.path.join('data','22scan_locs.mat')
+    filepath = os.path.join('data', '22scan_locs.mat')
     locs = sio.loadmat(filepath)['A']
     return locs
+
 
 def interestingband(data, srate=250):
     '''
@@ -373,68 +428,135 @@ def interestingband(data, srate=250):
     '''
     eps = 1e-9
     IBdata = []
-    b, a = signal.butter(1, [4, 8], 'bandpass', fs=srate)# theta
+    b, a = signal.butter(1, [4, 8], 'bandpass', fs=srate)  # theta
     z, p, k = signal.tf2zpk(b, a)
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
-    b, a = signal.butter(2, [8, 13], 'bandpass', fs=srate)# alpha
+    IBdata.append(
+        signal.filtfilt(b,
+                        a,
+                        data,
+                        axis=-1,
+                        method='gust',
+                        irlen=approx_impulse_len))
+    b, a = signal.butter(2, [8, 13], 'bandpass', fs=srate)  # alpha
     z, p, k = signal.tf2zpk(b, a)
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
-    b, a = signal.butter(3, [14, 30], 'bandpass', fs=srate)# beta
+    IBdata.append(
+        signal.filtfilt(b,
+                        a,
+                        data,
+                        axis=-1,
+                        method='gust',
+                        irlen=approx_impulse_len))
+    b, a = signal.butter(3, [14, 30], 'bandpass', fs=srate)  # beta
     z, p, k = signal.tf2zpk(b, a)
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
-    b, a = signal.butter(4, [30, 40], 'bandpass', fs=srate)# low gamma
+    IBdata.append(
+        signal.filtfilt(b,
+                        a,
+                        data,
+                        axis=-1,
+                        method='gust',
+                        irlen=approx_impulse_len))
+    b, a = signal.butter(4, [30, 40], 'bandpass', fs=srate)  # low gamma
     z, p, k = signal.tf2zpk(b, a)
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
-    b, a = signal.butter(4, [71, 91], 'bandpass', fs=srate)# high gamma
+    IBdata.append(
+        signal.filtfilt(b,
+                        a,
+                        data,
+                        axis=-1,
+                        method='gust',
+                        irlen=approx_impulse_len))
+    b, a = signal.butter(4, [71, 91], 'bandpass', fs=srate)  # high gamma
     z, p, k = signal.tf2zpk(b, a)
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
-    IBdata.append(signal.filtfilt(b, a, data, axis=-1, method='gust', irlen=approx_impulse_len))
+    IBdata.append(
+        signal.filtfilt(b,
+                        a,
+                        data,
+                        axis=-1,
+                        method='gust',
+                        irlen=approx_impulse_len))
     #now np.array(IBdata) shapes as[n_colors, n_trials, n_channels, n_samples]
     IBdata = np.swapaxes(np.array(IBdata), 0, 1)
     IBdata = np.swapaxes(IBdata, 1, 2)
     IBdata = np.swapaxes(IBdata, 2, 3)
-    print("Data filterbank complete. Shape is %r." % (IBdata.shape,))
+    print("Data filterbank complete. Shape is %r." % (IBdata.shape, ))
     return IBdata
 
 
 def load_or_gen_interestingband_data(filepath, start=0, end=4, srate=250):
-    if os.path.exists(filepath[:-4]+'_ib.mat'):
-        print('Loading data from %s' %(filepath[:-4]+'_ib.mat'))
-        data = sio.loadmat(filepath[:-4]+'_ib.mat')['ib']
-        print('Load interestingband data complete. Shape is %r.' %(data.shape,))
+    if os.path.exists(filepath[:-4] + '_ib.mat'):
+        print('Loading data from %s' % (filepath[:-4] + '_ib.mat'))
+        data = sio.loadmat(filepath[:-4] + '_ib.mat')['ib']
+        print('Load interestingband data complete. Shape is %r.' %
+              (data.shape, ))
     else:
-        data = interestingband(load_data(filepath,label=False),srate=srate)
-        data = data[:,:,start*srate:end*srate,:]
-        print('Load interestingband data complete. Shape is %r.' %(data.shape,))
-        sio.savemat(filepath[:-4]+'_ib.mat',{'ib':data})
-        print('Save interestingband data[\'ib\'] complete. To %s' %(filepath[:-4]+'_ib.mat'))
+        data = interestingband(load_data(filepath, label=False), srate=srate)
+        data = data[:, :, start * srate:end * srate, :]
+        print('Load interestingband data complete. Shape is %r.' %
+              (data.shape, ))
+        sio.savemat(filepath[:-4] + '_ib.mat', {'ib': data})
+        print('Save interestingband data[\'ib\'] complete. To %s' %
+              (filepath[:-4] + '_ib.mat'))
 
     return data
 
 
-# In order to gain energy-spectrum, cwt is needed. And dwt is used for signal deposition. 
+# In order to gain energy-spectrum, cwt is needed. And dwt is used for signal deposition.
 def cwt(data):
-    signal.cwt()# lack of defined wavelets, return conv
+    signal.cwt()  # lack of defined wavelets, return conv
     #signal.dwt()# tan90
     signal.daub()
-    pywt.cwt()# return coef
+    pywt.cwt()  # return coef
     pywt.dwt()
-    
+    pywt.wavedec()
+    signal.stft()
+    signal.hilbert()
     return data
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     print(pywt.wavelist())
-    print(pywt.ContinuousWavelet('dump'))
+    print(pywt.ContinuousWavelet('gaus8'))
+    x = np.linspace(0, 4, 1000)
+    y = (1 + 0.5 * np.cos(2 * np.pi * 5 * x)
+         ) * np.cos(2 * np.pi * 50 * x + 0.5 * np.sin(2 * np.pi * 10 * x))
+    plt.plot(x, y)  # doctest: +SKIP
+    coef, freqs = pywt.cwt(y,
+                           np.arange(1, 129),
+                           'gaus4',
+                           sampling_period=1.0 / 250)
+    plt.matshow(abs(coef))  # doctest: +SKIP
+    print(freqs)
+    plt.figure()
+    plt.contourf(x, freqs, abs(coef))
+    f, t, Zxx = signal.stft(y, fs=250, window='hann')
+    plt.figure()
+    print(f)
+    plt.pcolormesh(t,
+                   f,
+                   np.abs(Zxx),
+                   vmin=np.min(np.abs(Zxx)),
+                   vmax=np.max(np.abs(Zxx)))
+    plt.title('STFT Magnitude')
+    plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time [sec]')
+    plt.show()
+
+    # t = np.linspace(-1, 1, 200, endpoint=False)
+    # sig  = np.cos(2 * np.pi * 7 * t) + np.real(np.exp(-7*(t-0.4)**2)*np.exp(1j*2*np.pi*2*(t-0.4)))
+    # widths = np.arange(1, 31)
+    # cwtmatr, freqs = pywt.cwt(sig, widths, 'gaus8')
+    # plt.imshow(cwtmatr, extent=[-1, 1, 1, 31], cmap='PRGn', aspect='auto',
+    #            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())  # doctest: +SKIP
+    # plt.show() # doctest: +SKIP
     #t = np.linspace(0, 1, 2000, False)  # 1 second
     #sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)    # 构造10hz和20hz的两个信号
     #sig = np.array([[sig,sig],[sig,sig]])
@@ -444,7 +566,6 @@ if __name__=='__main__':
     #ax1.set_title('10 Hz and 20 Hz sinusoids')
     #ax1.axis([0, 1, -2, 2])
 
-    
     #b, a = signal.butter(4, [14,30], 'bandpass', fs=2000, output='ba')     #采样率为1000hz，带宽为15hz，输出ba
     #z, p, k = signal.tf2zpk(b, a)
     #eps = 1e-9
