@@ -18,6 +18,18 @@ srate = 250
 K.set_image_data_format('channels_last')
 
 if __name__ == '__main__':
-    train_EEGNet(4, srate=srate, epochs=600, patience=200, prep=False, restate=False)
-    # train_rawEEGConvNet(4, srate=srate, epochs=600, patience=200, prep=False)
+    train_EEGNet(4,
+                 srate=srate,
+                 epochs=1200,
+                 patience=300,
+                 prep=True,
+                 start=0.5,
+                 end=4)
+    # train_rawEEGConvNet(4,
+    #                     srate=srate,
+    #                     epochs=600,
+    #                     patience=200,
+    #                     prep=False,
+    #                     start=0,
+    #                     end=4)
     pass

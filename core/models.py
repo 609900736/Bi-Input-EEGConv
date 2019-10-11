@@ -8,7 +8,6 @@ from tensorflow.python.keras.layers import Dense, \
                                            Conv3D, \
                                            Concatenate, \
                                            BatchNormalization, \
-                                           AveragePooling1D, \
                                            AveragePooling2D, \
                                            AveragePooling3D, \
                                            MaxPooling2D, \
@@ -64,12 +63,12 @@ def rawEEGConvModel(Chans,
                         depthwise_constraint=max_norm(1.))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
-    s = AveragePooling2D((1, 4))(s)
+    s = MaxPooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
     s = SeparableConv2D(F2, (1, 16), padding='same', use_bias=False)(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
-    s = AveragePooling2D((1, 8))(s)
+    s = MaxPooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
 

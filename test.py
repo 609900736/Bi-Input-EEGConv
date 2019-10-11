@@ -16,9 +16,9 @@ from tensorflow.python.keras.models import load_model
 from tensorflow.python.keras import backend as K
 
 srate = 250
-start = 0
-end = 3
-prep = False
+start = 0.5
+end = 4
+prep = True
 Samples = (end - start) * srate
 K.set_image_data_format('channels_last')
 
@@ -29,17 +29,21 @@ if __name__ == '__main__':
         pp = ''
 
     for i in range(1, 10):
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_data(filepath, label=False)
-        x_test = np.expand_dims(x_test[:, :, start * srate:end * srate], -1)
-        filepath = os.path.join('data', 'Test',
+        x_test = np.expand_dims(
+            x_test[:, :, int(start * srate):int(end * srate)], -1)
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath, label=True)
         y_test -= 1
 
         filepath = os.path.join(
-            'model', '2019_10_10_17_37_14' + '_A0' + str(i) + 'T_EEGNet.h5')
+            'model',
+            '2019_10_11_19_37_6' + '_A0' + str(i) + 'T_EEGNet.h5')
         model = load_model(filepath)
         #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
         #          loss=tf.keras.losses.sparse_categorical_crossentropy,

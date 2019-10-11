@@ -30,13 +30,13 @@ def train_EEGNet(n_classes,
     else:
         pp = ''
 
-    # model = EEGNet(n_classes, Chans=Chans, Samples=Samples)
-    # model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
-    #               loss=tf.keras.losses.sparse_categorical_crossentropy,
-    #               metrics=['accuracy'])
+    model = EEGNet(n_classes, Chans=Chans, Samples=Samples)
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
+                  loss=tf.keras.losses.sparse_categorical_crossentropy,
+                  metrics=['accuracy'])
 
-    filepath = os.path.join('model', '2019_10_10_17_8_29_A09T_EEGNet.h5')
-    model = load_model(filepath)
+    # filepath = os.path.join('model', '2019_10_10_17_8_29_A09T_EEGNet.h5')
+    # model = load_model(filepath)
     model.summary()
     # export graph of the model
     tf.keras.utils.plot_model(model, 'EEGNet.png', show_shapes=True)
@@ -52,19 +52,25 @@ def train_EEGNet(n_classes,
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
     for i in range(1, 10):
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_data(filepath, label=False)
-        x_train = np.expand_dims(x_train[:, :, start * srate:end * srate], -1)
-        filepath = os.path.join('data', 'Train',
+        x_train = np.expand_dims(
+            x_train[:, :, int(start * srate):int(end * srate)], -1)
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
         y_train -= 1
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_data(filepath, label=False)
-        x_test = np.expand_dims(x_test[:, :, start * srate:end * srate], -1)
-        filepath = os.path.join('data', 'Test',
+        x_test = np.expand_dims(
+            x_test[:, :, int(start * srate):int(end * srate)], -1)
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
         y_test -= 1
@@ -170,19 +176,25 @@ def train_rawEEGConvNet(n_classes,
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
     for i in range(1, 10):
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_data(filepath, label=False)
-        x_train = np.expand_dims(x_train[:, :, start * srate:end * srate], -1)
-        filepath = os.path.join('data', 'Train',
+        x_train = np.expand_dims(
+            x_train[:, :, int(start * srate):int(end * srate)], -1)
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
         y_train -= 1
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_data(filepath, label=False)
-        x_test = np.expand_dims(x_test[:, :, start * srate:end * srate], -1)
-        filepath = os.path.join('data', 'Test',
+        x_test = np.expand_dims(
+            x_test[:, :, int(start * srate):int(end * srate)], -1)
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
         y_test -= 1
@@ -291,23 +303,27 @@ def train_graphEEGConvNet(n_classes,
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
     for i in range(1, 10):
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_or_gen_filterbank_data(filepath,
                                               start=start,
                                               end=end,
                                               srate=srate)
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
         y_train -= 1
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_or_gen_filterbank_data(filepath,
                                              start=start,
                                              end=end,
                                              srate=srate)
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
         y_test -= 1
@@ -416,23 +432,27 @@ def train_BiInputsEEGConvNet(n_classes,
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
     for i in range(1, 10):
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_or_gen_filterbank_data(filepath,
                                               start=start,
                                               end=end,
                                               srate=srate)
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
         y_train -= 1
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_or_gen_filterbank_data(filepath,
                                              start=start,
                                              end=end,
                                              srate=srate)
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
         y_test -= 1
@@ -488,23 +508,27 @@ def train_BiInputsEEGConvNet(n_classes,
 
     history = []
     for i in range(1, 10):
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_or_gen_filterbank_data(filepath,
                                               start=start,
                                               end=end,
                                               srate=srate)
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
         y_train -= 1
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_or_gen_filterbank_data(filepath,
                                              start=start,
                                              end=end,
                                              srate=srate)
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
         y_test -= 1
@@ -557,23 +581,27 @@ def train_BiInputsEEGConvNet(n_classes,
 
     history = []
     for i in range(1, 10):
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_or_gen_filterbank_data(filepath,
                                               start=start,
                                               end=end,
                                               srate=srate)
-        filepath = os.path.join('data', 'Train',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
         y_train -= 1
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_or_gen_filterbank_data(filepath,
                                              start=start,
                                              end=end,
                                              srate=srate)
-        filepath = os.path.join('data', 'Test',
+        filepath = os.path.join('data',
+                                str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
         y_test -= 1
