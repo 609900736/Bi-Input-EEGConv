@@ -25,6 +25,9 @@ from tensorflow.python.keras.layers import Dense, \
 from tensorflow.python.keras.constraints import max_norm, \
                                                 min_max_norm, \
                                                 unit_norm
+from tensorflow.python.keras.regularizers import l1, \
+                                                 l2, \
+                                                 l1_l2
 from tensorflow.python.keras import backend as K
 K.set_image_data_format('channels_last')
 
@@ -63,12 +66,12 @@ def rawEEGConvModel(Chans,
                         depthwise_constraint=max_norm(1.))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
-    s = MaxPooling2D((1, 4))(s)
+    # s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
     s = SeparableConv2D(F2, (1, 16), padding='same', use_bias=False)(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
-    s = MaxPooling2D((1, 8))(s)
+    # s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
 
@@ -104,7 +107,7 @@ def _old_rawEEGConvModel(Chans,
     input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
     for i in range(Colors):
         input = Input(shape=(Chans, Samples, 1), dtype=dtype)
-        s = Conv2D(F1, (1, kernLength), padding='same', use_bias=False)(input)
+        s = Conv2D(1, (1, kernLength), padding='same', use_bias=False)(input)
         s = BatchNormalization(axis=-1)(s)
         s = DepthwiseConv2D((Chans, 1),
                             use_bias=False,
@@ -114,7 +117,7 @@ def _old_rawEEGConvModel(Chans,
         s = Activation('elu')(s)
         s = AveragePooling2D((1, 4))(s)
         s = dropoutType(dropoutRate)(s)
-        s = SeparableConv2D(F2, (1, 16), padding='same', use_bias=False)(s)
+        s = SeparableConv2D(1*D, (1, 16), padding='same', use_bias=False)(s)
         s = BatchNormalization(axis=-1)(s)
         s = Activation('elu')(s)
         s = AveragePooling2D((1, 8))(s)
@@ -138,12 +141,12 @@ def _old_rawEEGConvModel(Chans,
     #con = Activation('elu')(con)
     #con = AveragePooling2D((1, F2), data_format = 'channels_first')(con)
     #con = dropoutType(dropoutRate)(con)
-    con = Conv2D(F2, (1, 1), padding='same', use_bias=False)(con)
-    con = BatchNormalization(axis=-1)(con)
-    con = Activation('elu')(con)
+    con = Conv2D(F2, (1, 1), use_bias=False)(con)
+    # con = BatchNormalization(axis=-1)(con)
+    # con = Activation('elu')(con)
     #con = AveragePooling2D((1, 2))(con)
     #con = AveragePooling2D((1, 5), data_format = 'channels_first')(con)
-    con = dropoutType(dropoutRate)(con)
+    # con = dropoutType(dropoutRate)(con)
     flatten = Flatten()(con)
 
     return Model(inputs=input_s, outputs=flatten)

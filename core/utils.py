@@ -16,10 +16,16 @@ from sklearn.preprocessing import scale
 def cart2sph(x, y, z):
     """
     Transform Cartesian coordinates to spherical
-    x: X coordinate
-    y: Y coordinate
-    z: Z coordinate
-    :return: radius, elevation, azimuth
+
+    Input:
+
+        x: float, X coordinate
+        y: float, Y coordinate
+        z: float, Z coordinate
+
+    Output:
+
+        radius, elevation, azimuth: float -> tuple, Transformed polar coordinates
     """
     x2_y2 = x**2 + y**2
     r = m.sqrt(x2_y2 + z**2)  # r
@@ -31,9 +37,15 @@ def cart2sph(x, y, z):
 def pol2cart(theta, rho):
     """
     Transform polar coordinates to Cartesian
-    theta: angle value
-    rho: radius value
-    :return: X, Y
+
+    Input:
+   
+        theta   : float, angle value
+        rho     : float, radius value
+    
+    Output:
+
+        X, Y    : float -> tuple, projected coordinates
     """
     return rho * m.cos(theta), rho * m.sin(theta)
 
@@ -46,8 +58,13 @@ def azim_proj(pos):
     the graticule onto the plane the result would be a planar, or
     azimuthal, map projection.
 
-    pos: position in 3D Cartesian coordinates    [x, y, z]
-    :return: projected coordinates using Azimuthal Equidistant Projection
+    Input:
+        
+        pos     : list or tuple, position in 3D Cartesian coordinates [x, y, z]
+        
+    Output:
+
+        X, Y    : float -> tuple, projected coordinates using Azimuthal Equidistant Projection
     """
     [r, elev, az] = cart2sph(pos[0], pos[1], pos[2])
     return pol2cart(az, m.pi / 2 - elev)
@@ -109,7 +126,7 @@ def gen_images(locs,
         stdmult     : Multiplier for std of added noise
         nComponents : Number of components in PCA to retain for augmentation
         edgeless    : If True generates edgeless images by adding artificial channels
-                      at four corners of the image with value = 0 (default=False).
+                      at four corners of the image with value = 0 (default = False).
         
     Output:
 
@@ -120,19 +137,19 @@ def gen_images(locs,
 
     # Test whether the feature vector length is divisible by number of electrodes
     assert features.shape[1] % nElectrodes == 0
-    ncolors = features.shape[1] / nElectrodes
-    for c in range(ncolors):
+    nColors = features.shape[1] / nElectrodes
+    for c in range(nColors):
         feat_array_temp.append(features[:, c * nElectrodes:nElectrodes *
                                         (c + 1)])
     if augment:
         if pca:
-            for c in range(ncolors):
+            for c in range(nColors):
                 feat_array_temp[c] = augment_EEG(feat_array_temp[c],
                                                  stdmult,
                                                  pca=True,
                                                  nComponents=nComponents)
         else:
-            for c in range(ncolors):
+            for c in range(nColors):
                 feat_array_temp[c] = augment_EEG(feat_array_temp[c],
                                                  stdmult,
                                                  pca=False,
@@ -145,7 +162,7 @@ def gen_images(locs,
                               min(locs[:, 1]):max(locs[:, 1]):nGridpoints *
                               1j]
     interp = []
-    for c in range(ncolors):
+    for c in range(nColors):
         interp.append(np.zeros([nSamples, nGridpoints, nGridpoints]))
 
     # Generate edgeless images
@@ -156,14 +173,14 @@ def gen_images(locs,
                          np.array([[min_x, min_y], [min_x, max_y],
                                    [max_x, min_y], [max_x, max_y]]),
                          axis=0)
-        for c in range(ncolors):
+        for c in range(nColors):
             feat_array_temp[c] = np.append(feat_array_temp[c],
                                            np.zeros((nSamples, 4)),
                                            axis=1)
 
     # Interpolating
     for i in range(nSamples):
-        for c in range(ncolors):
+        for c in range(nColors):
             interp[c][i, :, :] = griddata(locs,
                                                feat_array_temp[c][i, :],
                                                (grid_x, grid_y),
@@ -172,7 +189,7 @@ def gen_images(locs,
         print('Interpolating {0}/{1}\r'.format(i + 1, nSamples), end='\r')
 
     # Normalizing
-    for c in range(ncolors):
+    for c in range(nColors):
         if normalize:
             interp[c][~np.isnan(interp[c])] = \
                 scale(interp[c][~np.isnan(interp[c])])
@@ -188,11 +205,16 @@ def augment_EEG(data, stdmult, pca=False, nComponents=2):
     """
     Augment data by adding normal noise to each feature.
 
-    data: EEG feature data as a matrix (nSamples x n_features)
-    stdmult: Multiplier for std of added noise
-    pca: if True will perform PCA on data and add noise proportional to PCA components.
-    nComponents: Number of components to consider when using PCA.
-    :return: Augmented data as a matrix (nSamples x n_features)
+    Input:
+
+        data        : EEG feature data as a matrix (nSamples, nFeatures)
+        stdmult     : Multiplier for std of added noise
+        pca         : if True will perform PCA on data and add noise proportional to PCA components.
+        nComponents : Number of components to consider when using PCA.
+
+    Output:
+
+        augData     : Augmented data as a matrix (nSamples, nFSeatures)
     """
     augData = np.zeros(data.shape)
     if pca:
@@ -252,7 +274,7 @@ def load_or_generate_images(filepath=None, locspath=None, average_image=3):
 
     Output:
 
-        data    : ndarray, Tensor of size [nTrials, nSamples, H, W, ncolors] containing generated images.
+        data    : ndarray, Tensor of size [nTrials, nSamples, H, W, nColors] containing generated images.
     """
     if filepath is None:
         filepath = ''
@@ -392,7 +414,7 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
 
     Output:
 
-        FBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, ncolors]
+        FBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, nColors]
     '''
     nTrials, nChannels, nSamples = data.shape
     FBdata = []
@@ -400,7 +422,7 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
         end = beg + window
         b, a = signal.butter(4, [beg / srate * 2, end / srate * 2], 'bandpass')
         FBdata.append(signal.filtfilt(b, a, data, axis=-1))
-    #now np.array(FBdata) shapes as[ncolors, nTrials, nChannels, nSamples]
+    #now np.array(FBdata) shapes as[nColors, nTrials, nChannels, nSamples]
     FBdata = np.swapaxes(np.array(FBdata), 0, 1)
     FBdata = np.swapaxes(FBdata, 1, 2)
     FBdata = np.swapaxes(FBdata, 2, 3)
@@ -432,9 +454,11 @@ def load_or_gen_filterbank_data(filepath,
 
     Output:
     
-        FBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, ncolors]
+        FBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, nColors]
 
-    *type num means int or float
+    *********************************************************
+    
+        type num means int or float
     '''
     if os.path.exists(filepath[:-4] + '_fb.mat'):
         print('Loading data from %s' % (filepath[:-4] + '_fb.mat'))
@@ -480,7 +504,7 @@ def interestingband(data, srate=250):
     theta: 4-8Hz
     alpha: 8-13Hz
     beta: 14-30Hz
-    low gamma: 30-40Hz
+    low gamma: 30-50Hz
     high gamma: 71-91Hz
 
     Input:
@@ -490,7 +514,7 @@ def interestingband(data, srate=250):
 
     Output:
 
-        IBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, ncolors]
+        IBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, nColors]
     '''
     eps = 1e-9
     IBdata = []
@@ -527,7 +551,7 @@ def interestingband(data, srate=250):
                         axis=-1,
                         method='gust',
                         irlen=approx_impulse_len))
-    b, a = signal.butter(4, [30, 40], 'bandpass', fs=srate)  # low gamma
+    b, a = signal.butter(4, [30, 50], 'bandpass', fs=srate)  # low gamma
     z, p, k = signal.tf2zpk(b, a)
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
@@ -549,7 +573,7 @@ def interestingband(data, srate=250):
                         axis=-1,
                         method='gust',
                         irlen=approx_impulse_len))
-    #now np.array(IBdata) shapes as[ncolors, nTrials, nChannels, nSamples]
+    # now np.array(IBdata) shapes as[nColors, nTrials, nChannels, nSamples]
     IBdata = np.swapaxes(np.array(IBdata), 0, 1)
     IBdata = np.swapaxes(IBdata, 1, 2)
     IBdata = np.swapaxes(IBdata, 2, 3)
@@ -570,9 +594,11 @@ def load_or_gen_interestingband_data(filepath, beg=0, end=4, srate=250):
 
     Output:
 
-        IBdata  : np.array, data after interesting-band filters, shapes as [nTrials, nChannels, nSamples, ncolors]
+        IBdata  : ndarray, data after interesting-band filters, shapes as [nTrials, nChannels, nSamples, nColors]
 
-    *type num means int or float
+    *********************************************************
+
+        type num means int or float
     '''
     if os.path.exists(filepath[:-4] + '_ib.mat'):
         print('Loading data from %s' % (filepath[:-4] + '_ib.mat'))

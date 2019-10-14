@@ -16,9 +16,9 @@ from tensorflow.python.keras.models import load_model
 from tensorflow.python.keras import backend as K
 
 srate = 250
-start = 0.5
+start = 0
 end = 4
-prep = True
+prep = False
 Samples = (end - start) * srate
 K.set_image_data_format('channels_last')
 
@@ -39,11 +39,10 @@ if __name__ == '__main__':
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath, label=True)
-        y_test -= 1
 
         filepath = os.path.join(
             'model',
-            '2019_10_11_19_37_6' + '_A0' + str(i) + 'T_EEGNet.h5')
+            '2019_10_14_20_47_53' + '_A0' + str(i) + 'T_rawEEGConvNet.h5')
         model = load_model(filepath)
         #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
         #          loss=tf.keras.losses.sparse_categorical_crossentropy,

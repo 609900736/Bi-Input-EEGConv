@@ -15,7 +15,7 @@ from tensorflow.python.keras.models import load_model
 def train_EEGNet(n_classes,
                  Chans=22,
                  beg=0,
-                 end=3,
+                 end=4,
                  srate=250,
                  batch_size=10,
                  epochs=500,
@@ -62,7 +62,6 @@ def train_EEGNet(n_classes,
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        y_train -= 1
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
@@ -73,7 +72,6 @@ def train_EEGNet(n_classes,
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
-        y_test -= 1
 
         filepath = os.path.join(
             'model',
@@ -132,7 +130,7 @@ def train_EEGNet(n_classes,
 def train_rawEEGConvNet(n_classes,
                         Chans=22,
                         beg=0,
-                        end=3,
+                        end=4,
                         Colors=1,
                         srate=250,
                         batch_size=10,
@@ -186,7 +184,6 @@ def train_rawEEGConvNet(n_classes,
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        y_train -= 1
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
@@ -197,7 +194,6 @@ def train_rawEEGConvNet(n_classes,
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
-        y_test -= 1
 
         filepath = os.path.join(
             'model',
@@ -314,7 +310,6 @@ def train_graphEEGConvNet(n_classes,
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        y_train -= 1
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
@@ -326,7 +321,6 @@ def train_graphEEGConvNet(n_classes,
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
-        y_test -= 1
 
         filepath = os.path.join(
             'model',
@@ -443,7 +437,6 @@ def train_BiInputsEEGConvNet(n_classes,
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        y_train -= 1
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
@@ -455,7 +448,6 @@ def train_BiInputsEEGConvNet(n_classes,
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
-        y_test -= 1
 
         filepath = os.path.join(
             'model',
@@ -519,7 +511,6 @@ def train_BiInputsEEGConvNet(n_classes,
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        y_train -= 1
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
@@ -531,7 +522,6 @@ def train_BiInputsEEGConvNet(n_classes,
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
-        y_test -= 1
 
         filepath = os.path.join(
             'model',
@@ -592,7 +582,6 @@ def train_BiInputsEEGConvNet(n_classes,
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        y_train -= 1
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
@@ -604,7 +593,6 @@ def train_BiInputsEEGConvNet(n_classes,
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
-        y_test -= 1
 
         filepath = os.path.join(
             'model',
