@@ -244,18 +244,20 @@ def BiInputsEEGConvNet(n_classes,
                        norm_rate=0.25,
                        dtype=tf.float32):
     """
-    data_format: NCHW for 4D data
-                 NCHWT for 5D data
+    data_format: NHWC for 4D data
+                 NDHWC for 5D data
 
     Inputs:
-      n_classes       : int, number of classes to classify
-      Chans, Samples  : int, number of channels and time points in the EEG data
-      Colors, H, W    : int, filter numbers of filter-bank, height and width of the EEG graph
-      norm_rate       : float, number of max_norm rate
-      dtype           : object, type of data, default tf.float32
+
+        n_classes       : int, number of classes to classify
+        Chans, Samples  : int, number of channels and time points in the EEG data
+        Colors, H, W    : int, filter numbers of filter-bank, height and width of the EEG graph
+        norm_rate       : float, number of max_norm rate
+        dtype           : object, type of data, default tf.float32
 
     Output:
-      model           : BIEEGConvNet keras model
+
+        model           : Model, BIEEGConvNet keras model
     """
 
     # Learn from raw EEG signals
