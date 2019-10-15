@@ -17,3 +17,4 @@ Introduction of existed saved models:
 	2019_10_11_19_37_6:		EEGNet(8,2) with filtered and 0.5-4s data
 	2019_10_14_19_37_46:	EEGNet(8,2) with unfiltered data, without max_norm in Dense layer
 	2019_10_14_20_47_53:	EEGNet(8,2) with unfiltered data, without Averagepooling2D
+	2019_10_15_15_18_36:	EEGNet(8,2) with filtered and 0.5-4s data

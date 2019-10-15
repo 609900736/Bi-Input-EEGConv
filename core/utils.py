@@ -114,32 +114,28 @@ def gen_images(locs,
 
     Input:
 
-        locs        : An array with shape [nElectrodes, 2] containing X, Y coordinates
+        locs        : ndarray, An array with shape [nChannels, 2] containing X, Y coordinates
                       for each electrode.
-        features    : Feature matrix as [nSamples, nFeatures] Features are as columns.
+        features    : ndarray, Feature matrix as [nChannels, nSamples, nColors] Features are as columns.
                       Features corresponding to each frequency band are concatenated.
-                      (alpha1, alpha2, ..., beta1, beta2,...)
-        nGridpoints : Number of pixels in the output images
-        normalize   : Flag for whether to normalize each band over all samples
-        augment     : Flag for generating augmented images
-        pca         : Flag for PCA based data augmentation
-        stdmult     : Multiplier for std of added noise
-        nComponents : Number of components in PCA to retain for augmentation
-        edgeless    : If True generates edgeless images by adding artificial channels
+        nGridpoints : int, Number of pixels in the output images
+        normalize   : bool, Flag for whether to normalize each band over all samples
+        augment     : bool, Flag for generating augmented images
+        pca         : bool, Flag for PCA based data augmentation
+        stdmult     : float, Multiplier for std of added noise
+        nComponents : int, Number of components in PCA to retain for augmentation
+        edgeless    : bool, If True generates edgeless images by adding artificial channels
                       at four corners of the image with value = 0 (default = False).
         
     Output:
 
-        interp      : Tensor of size [samples, H, W, colors] containing generated images.
+        interp      : ndarray, Tensor of size [nSamples, H, W, nColors] containing generated images.
     """
     feat_array_temp = []
-    nElectrodes = locs.shape[0]  # Number of electrodes
-
-    # Test whether the feature vector length is divisible by number of electrodes
-    assert features.shape[1] % nElectrodes == 0
-    nColors = features.shape[1] / nElectrodes
+    nChannels = features.shape[0]  # Number of electrodes
+    nColors = features.shape[2]
     for c in range(nColors):
-        feat_array_temp.append(features[:, c * nElectrodes:nElectrodes *
+        feat_array_temp.append(features[:, c * nChannels:nChannels *
                                         (c + 1)])
     if augment:
         if pca:
@@ -157,10 +153,8 @@ def gen_images(locs,
     nSamples = features.shape[0]
 
     # Interpolate the values
-    grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):nGridpoints *
-                              1j,
-                              min(locs[:, 1]):max(locs[:, 1]):nGridpoints *
-                              1j]
+    grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):nGridpoints * 1j,
+                              min(locs[:, 1]):max(locs[:, 1]):nGridpoints * 1j]
     interp = []
     for c in range(nColors):
         interp.append(np.zeros([nSamples, nGridpoints, nGridpoints]))
@@ -182,10 +176,10 @@ def gen_images(locs,
     for i in range(nSamples):
         for c in range(nColors):
             interp[c][i, :, :] = griddata(locs,
-                                               feat_array_temp[c][i, :],
-                                               (grid_x, grid_y),
-                                               method='cubic',
-                                               fill_value=np.nan)
+                                          feat_array_temp[c][i, :],
+                                          (grid_x, grid_y),
+                                          method='cubic',
+                                          fill_value=np.nan)
         print('Interpolating {0}/{1}\r'.format(i + 1, nSamples), end='\r')
 
     # Normalizing
@@ -195,9 +189,8 @@ def gen_images(locs,
                 scale(interp[c][~np.isnan(interp[c])])
         interp[c] = np.nan_to_num(interp[c])
 
-    interp = np.swapaxes(
-        np.asarray(interp), 0,
-        1)  # swap axes to have [samples, H, W, colors]
+    interp = np.swapaxes(np.asarray(interp), 0,
+                         1)  # swap axes to have [nSamples, H, W, nColors]
     return interp
 
 
@@ -617,11 +610,9 @@ def load_or_gen_interestingband_data(filepath, beg=0, end=4, srate=250):
     return data
 
 
-# In order to gain energy-spectrum, cwt is needed. And dwt is used for signal deposition.
+# In order to gain energy-spectrum, cwt, stft, hht, and envelope is considered 
 def cwt(data):
     signal.cwt()  # lack of defined wavelets, return conv
-    #signal.dwt()# tan90
-    signal.daub()
     pywt.cwt()  # return coef
     pywt.dwt()
     pywt.wavedec()
