@@ -9,16 +9,16 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from core.utils import load_data, filterbank
+from core.utils import load_data, filterbank, highpassfilter, bandpassfilter
 from core.models import EEGNet
 
 from tensorflow.python.keras.models import load_model
 from tensorflow.python.keras import backend as K
 
 srate = 250
-start = 0.5
+start = 0
 end = 4
-prep = True
+prep = False
 Samples = (end - start) * srate
 K.set_image_data_format('channels_last')
 
@@ -33,6 +33,7 @@ if __name__ == '__main__':
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_data(filepath, label=False)
+        x_test = bandpassfilter(x_test)
         x_test = np.expand_dims(
             x_test[:, :, int(start * srate):int(end * srate)], -1)
         filepath = os.path.join('data',
@@ -42,7 +43,7 @@ if __name__ == '__main__':
 
         filepath = os.path.join(
             'model',
-            '2019_10_15_15_18_36' + '_A0' + str(i) + 'T_EEGNet.h5')
+            '2019_10_16_21_1_57' + '_A0' + str(i) + 'T_EEGNet.h5')
         model = load_model(filepath)
         #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
         #          loss=tf.keras.losses.sparse_categorical_crossentropy,

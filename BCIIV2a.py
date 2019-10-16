@@ -22,8 +22,8 @@ if __name__ == '__main__':
                  srate=srate,
                  epochs=1200,
                  patience=300,
-                 prep=True,
-                 beg=0.5,
+                 prep=False,
+                 beg=0,
                  end=4)
     # train_rawEEGConvNet(4,
     #                     srate=srate,

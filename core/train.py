@@ -6,8 +6,8 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data
-from core.models import EEGNet, rawEEGConvModel, rawEEGConvNet, graphEEGConvModel, graphEEGConvNet, BiInputsEEGConvNet
+from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data, load_or_generate_images, highpassfilter, bandpassfilter
+from core.models import EEGNet, rawEEGConvModel, rawEEGConvNet, graphEEGConvModel, graphEEGConvNet, BiInputsEEGConvNet, ShallowConvNet, DeepConvNet
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.models import load_model
 
@@ -56,6 +56,7 @@ def train_EEGNet(n_classes,
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_data(filepath, label=False)
+        x_train = bandpassfilter(x_train)
         x_train = np.expand_dims(
             x_train[:, :, int(beg * srate):int(end * srate)], -1)
         filepath = os.path.join('data',
@@ -66,6 +67,7 @@ def train_EEGNet(n_classes,
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_data(filepath, label=False)
+        x_test = bandpassfilter(x_test)
         x_test = np.expand_dims(
             x_test[:, :, int(beg * srate):int(end * srate)], -1)
         filepath = os.path.join('data',

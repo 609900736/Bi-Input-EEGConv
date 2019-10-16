@@ -92,6 +92,7 @@ def load_data(datafile, label=True):
     if label:
         print("Data loading complete. Shape is %r" %
               (dataMat['classlabel'].shape, ))
+        # Class labels should start from 0
         return dataMat['classlabel'] - 1
     else:  # [nChannels, nSamples, nTrials]
         dataMat['s'] = dataMat['s'].swapaxes(1, 2)
@@ -131,25 +132,25 @@ def gen_images(locs,
 
         interp      : ndarray, Tensor of size [nSamples, H, W, nColors] containing generated images.
     """
-    feat_array_temp = []
+    feat_array_temp = features
     nChannels = features.shape[0]  # Number of electrodes
     nColors = features.shape[2]
-    for c in range(nColors):
-        feat_array_temp.append(features[:, c * nChannels:nChannels *
-                                        (c + 1)])
+
     if augment:
         if pca:
             for c in range(nColors):
-                feat_array_temp[c] = augment_EEG(feat_array_temp[c],
-                                                 stdmult,
-                                                 pca=True,
-                                                 nComponents=nComponents)
+                feat_array_temp[:, :, c] = augment_EEG(
+                    feat_array_temp[:, :, c],
+                    stdmult,
+                    pca=True,
+                    nComponents=nComponents)
         else:
             for c in range(nColors):
-                feat_array_temp[c] = augment_EEG(feat_array_temp[c],
-                                                 stdmult,
-                                                 pca=False,
-                                                 nComponents=nComponents)
+                feat_array_temp[:, :, c] = augment_EEG(
+                    feat_array_temp[:, :, c],
+                    stdmult,
+                    pca=False,
+                    nComponents=nComponents)
     nSamples = features.shape[0]
 
     # Interpolate the values
@@ -168,15 +169,15 @@ def gen_images(locs,
                                    [max_x, min_y], [max_x, max_y]]),
                          axis=0)
         for c in range(nColors):
-            feat_array_temp[c] = np.append(feat_array_temp[c],
-                                           np.zeros((nSamples, 4)),
-                                           axis=1)
+            feat_array_temp[:, :, c] = np.append(feat_array_temp[:, :, c],
+                                                 np.zeros((nSamples, 4)),
+                                                 axis=1)
 
     # Interpolating
     for i in range(nSamples):
         for c in range(nColors):
             interp[c][i, :, :] = griddata(locs,
-                                          feat_array_temp[c][i, :],
+                                          feat_array_temp[i, :, c],
                                           (grid_x, grid_y),
                                           method='cubic',
                                           fill_value=np.nan)
@@ -256,21 +257,24 @@ def reformatInput(data, labels, indices):
                  np.squeeze(labels[testIndices]).astype(np.int32))]
 
 
-def load_or_generate_images(filepath=None, locspath=None, average_image=3):
+def load_or_generate_images(filepath,
+                            locspath=None,
+                            mode='potentialMap',
+                            averageImages=64):
     """
     Generates EEG images
 
     Input:
 
-        filepath: str, path of images data file, default is None
-        locspath: str, path of locations data file, default is None
+        filepath        : str, path of images data file
+        locspath        : str, path of locations data file, default is None
+        mode            : str, should be one of strings among 'potential', 'energy', and 'envelope', default is 'potential'
+        averageImages   : int, length of window to mix images in time dimension, like averagepooling2D, default is 64
 
     Output:
 
-        data    : ndarray, Tensor of size [nTrials, nSamples, H, W, nColors] containing generated images.
+        data            : ndarray, Tensor of size [nTrials, nSamples, H, W, nColors] containing generated images
     """
-    if filepath is None:
-        filepath = ''
     if locspath is None:
         locspath = 'data/Neuroscan_locs_orig.mat'
     print('-' * 100)
@@ -282,14 +286,48 @@ def load_or_generate_images(filepath=None, locspath=None, average_image=3):
     for e in locs_3d:
         locs_2d.append(azim_proj(e))
 
-    data = load_data(filepath)
+    if mode == 'potential':
+        if os.path.exists(filepath[:-4] + '_potential_' + str(averageImages) +
+                          '.mat'):
+            images_average = sio.loadmat(filepath[:-4] + '_potential_' +
+                                         str(averageImages) +
+                                         '.mat')['images_average']
+            print('Load images_average done!')
+        else:
+            print('Generating average images over time windows...')
+            feats = load_or_gen_interestingband_data(filepath)
 
-    # Class labels should start from 0
-    f, t, Zxx = signal.stft(data, fs=250, window='hann')
-    feats = np.abs(Zxx)
-    labels = load_data(filepath)
+            images_average = np.asarray([
+                (gen_images(np.asarray(locs_2d),
+                            feats[i, :, :, :],
+                            32,
+                            normalize=False)
+                 for i in range(feats.shape[2] // averageImages))
+            ])
+            sio.savemat(
+                filepath[:-4] + '_potential_' + str(averageImages) + '.mat',
+                {'images_average': images_average})
+            print('Saving images_average done!')
+            del feats
+        images_average = images_average[np.newaxis, :]
+        print('The shape of images_average.shape', images_average.shape)
+        pass
+    elif mode == 'energy':
+        f, t, Zxx = signal.stft(load_data(filepath), fs=250, window='hann')
+        feats = np.abs(Zxx)
+        pass
+    elif mode == 'envelope':
+        signal.hilbert(load_data(filepath), )
+        pass
+    else:
+        raise ValueError(
+            'load_or_generate_images: mode should be one of strings among \'potential\', \'energy\', and \'envelope\''
+        )
+        pass
+    labels = load_data(filepath[:-4] + '_label.mat')
+    return images_average, labels
 
-    if average_image == 1:  # for CNN only
+    if averageImages == 1:  # for CNN only
         if os.path.exists(filepath + 'images_average.mat'):
             images_average = sio.loadmat(
                 filepath + 'images_average.mat')['images_average']
@@ -317,7 +355,7 @@ def load_or_generate_images(filepath=None, locspath=None, average_image=3):
         images_average = images_average[np.newaxis, :]
         print('The shape of images_average.shape', images_average.shape)
         return images_average, labels
-    elif average_image == 2:  # for mulit-frame model such as LSTM
+    elif averageImages == 2:  # for mulit-frame model such as LSTM
         if os.path.exists(filepath + 'images_timewin.mat'):
             images_timewin = sio.loadmat(
                 filepath + 'images_timewin.mat')['images_timewin']
@@ -610,7 +648,23 @@ def load_or_gen_interestingband_data(filepath, beg=0, end=4, srate=250):
     return data
 
 
-# In order to gain energy-spectrum, cwt, stft, hht, and envelope is considered 
+def highpassfilter(data, Wn=4, srate=250):
+    b, a = signal.butter(4, Wn=Wn, btype='highpass', fs=srate)
+    new_data = []
+    for e in data:
+        new_data.append(signal.filtfilt(b, a, e))
+    return np.asarray(new_data)
+
+
+def bandpassfilter(data, Wn=[4, 100], srate=250):
+    b, a = signal.butter(4, Wn=Wn, btype='bandpass', fs=srate)
+    new_data = []
+    for e in data:
+        new_data.append(signal.filtfilt(b, a, e))
+    return np.asarray(new_data)
+
+
+# In order to gain energy-spectrum, cwt, stft, hht, and envelope is considered
 def cwt(data):
     signal.cwt()  # lack of defined wavelets, return conv
     pywt.cwt()  # return coef
