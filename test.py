@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
         filepath = os.path.join(
             'model',
-            '2019_10_16_21_1_57' + '_A0' + str(i) + 'T_EEGNet.h5')
+            '2019_10_17_16_59_39' + '_A0' + str(i) + 'T_EEGNet.h5')
         model = load_model(filepath)
         #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
         #          loss=tf.keras.losses.sparse_categorical_crossentropy,

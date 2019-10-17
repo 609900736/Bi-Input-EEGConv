@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from core.utils import load_data, filterbank
 from core.models import EEGNet
-from core.train import train_EEGNet, train_rawEEGConvNet
+from core.train import train_EEGNet, train_rawEEGConvNet, train_graphEEGConvNet
 from tensorflow.python.keras import backend as K
 
 srate = 250
@@ -18,13 +18,13 @@ srate = 250
 K.set_image_data_format('channels_last')
 
 if __name__ == '__main__':
-    train_EEGNet(4,
-                 srate=srate,
-                 epochs=1200,
-                 patience=300,
-                 prep=False,
-                 beg=0,
-                 end=4)
+    # train_EEGNet(4,
+    #              srate=srate,
+    #              epochs=1200,
+    #              patience=300,
+    #              prep=False,
+    #              beg=0,
+    #              end=4)
     # train_rawEEGConvNet(4,
     #                     srate=srate,
     #                     epochs=1200,
@@ -32,4 +32,11 @@ if __name__ == '__main__':
     #                     prep=False,
     #                     beg=0,
     #                     end=4)
-    # pass
+    train_graphEEGConvNet(4,
+                          srate=srate,
+                          epochs=1200,
+                          patience=300,
+                          prep=False,
+                          beg=0,
+                          end=4)
+    pass

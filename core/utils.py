@@ -132,9 +132,10 @@ def gen_images(locs,
 
         interp      : ndarray, Tensor of size [nSamples, H, W, nColors] containing generated images.
     """
-    feat_array_temp = features
-    nChannels = features.shape[0]  # Number of electrodes
-    nColors = features.shape[2]
+    feat_array_temp = np.swapaxes(features, 0,
+                                  1)  # [nSamples, nChannels, nColors]
+    nChannels = feat_array_temp.shape[1]  # Number of electrodes
+    nColors = feat_array_temp.shape[2]
 
     if augment:
         if pca:
@@ -151,7 +152,7 @@ def gen_images(locs,
                     stdmult,
                     pca=False,
                     nComponents=nComponents)
-    nSamples = features.shape[0]
+    nSamples = feat_array_temp.shape[0]
 
     # Interpolate the values
     grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):nGridpoints * 1j,
@@ -190,8 +191,12 @@ def gen_images(locs,
                 scale(interp[c][~np.isnan(interp[c])])
         interp[c] = np.nan_to_num(interp[c])
 
-    interp = np.swapaxes(np.asarray(interp), 0,
-                         1)  # swap axes to have [nSamples, H, W, nColors]
+    interp = np.asarray(interp)
+    # swap axes to have [nSamples, H, W, nColors]
+    interp = np.swapaxes(interp, 0, 1)
+    interp = np.swapaxes(interp, 1, 2)
+    interp = np.swapaxes(interp, 2, 3)
+
     return interp
 
 
@@ -259,8 +264,11 @@ def reformatInput(data, labels, indices):
 
 def load_or_generate_images(filepath,
                             locspath=None,
+                            beg=0,
+                            end=4,
+                            srate=250,
                             mode='potentialMap',
-                            averageImages=64):
+                            averageImages=1):
     """
     Generates EEG images
 
@@ -268,19 +276,25 @@ def load_or_generate_images(filepath,
 
         filepath        : str, path of images data file
         locspath        : str, path of locations data file, default is None
+        beg             : num, second when imegery tasks begins, default is 0
+        end             : num, second when imegery tasks ends, default is 4
+        srate           : int, the sample rate of raw data, default is 250 
         mode            : str, should be one of strings among 'potential', 'energy', and 'envelope', default is 'potential'
-        averageImages   : int, length of window to mix images in time dimension, like averagepooling2D, default is 64
+        averageImages   : int, length of window to mix images in time dimension, like averagepooling2D, default is 1
 
     Output:
 
-        data            : ndarray, Tensor of size [nTrials, nSamples, H, W, nColors] containing generated images
+        imagesData      : ndarray, Tensor of size [nTrials, nSamples, H, W, nColors] containing generated images
+
+    *********************************************************
+    
+        type num means int or float
     """
     if locspath is None:
         locspath = 'data/Neuroscan_locs_orig.mat'
     print('-' * 100)
     print('Loading original data...')
-    locs = sio.loadmat(locspath)
-    locs_3d = locs['A']
+    locs_3d = load_locs(locspath)
     locs_2d = []
     # Convert to 2D
     for e in locs_3d:
@@ -295,15 +309,23 @@ def load_or_generate_images(filepath,
             print('Load images_average done!')
         else:
             print('Generating average images over time windows...')
-            feats = load_or_gen_interestingband_data(filepath)
-
-            images_average = np.asarray([
-                (gen_images(np.asarray(locs_2d),
-                            feats[i, :, :, :],
-                            32,
-                            normalize=False)
-                 for i in range(feats.shape[2] // averageImages))
-            ])
+            feats = load_or_gen_interestingband_data(filepath,
+                                                     beg=beg,
+                                                     end=end,
+                                                     srate=srate)
+            images_average = []
+            images_average.append(
+                gen_images(np.asarray(locs_2d),
+                           np.asarray(
+                               np.average(feats[n, :, i *
+                                                averageImages:(i + 1) *
+                                                averageImages, :],
+                                          axis=2)
+                               for i in range(feats.shape[2] //
+                                              averageImages)),
+                           32,
+                           normalize=False) for n in range(feats.shape[0]))
+            images_average = np.asarray(images_average)
             sio.savemat(
                 filepath[:-4] + '_potential_' + str(averageImages) + '.mat',
                 {'images_average': images_average})
@@ -313,8 +335,39 @@ def load_or_generate_images(filepath,
         print('The shape of images_average.shape', images_average.shape)
         pass
     elif mode == 'energy':
-        f, t, Zxx = signal.stft(load_data(filepath), fs=250, window='hann')
-        feats = np.abs(Zxx)
+        if os.path.exists(filepath[:-4] + '_energy_' + str(averageImages) +
+                          '.mat'):
+            images_average = sio.loadmat(filepath[:-4] + '_energy_' +
+                                         str(averageImages) +
+                                         '.mat')['images_average']
+            print('Load images_average done!')
+        else:
+            print('Generating average images over time windows...')
+            f, t, Zxx = signal.stft(load_or_gen_interestingband_data(filepath),
+                                    fs=250,
+                                    window='hann',
+                                    axis=2)
+            feats = np.abs(Zxx)
+            images_average = []
+            images_average.append(
+                gen_images(np.asarray(locs_2d),
+                           np.asarray(
+                               np.average(feats[n, :, i *
+                                                averageImages:(i + 1) *
+                                                averageImages, :],
+                                          axis=2)
+                               for i in range(feats.shape[2] //
+                                              averageImages)),
+                           32,
+                           normalize=False) for n in range(feats.shape[0]))
+            images_average = np.asarray(images_average)
+            sio.savemat(
+                filepath[:-4] + '_potential_' + str(averageImages) + '.mat',
+                {'images_average': images_average})
+            print('Saving images_average done!')
+            del feats
+        images_average = images_average[np.newaxis, :]
+        print('The shape of images_average.shape', images_average.shape)
         pass
     elif mode == 'envelope':
         signal.hilbert(load_data(filepath), )
@@ -326,108 +379,6 @@ def load_or_generate_images(filepath,
         pass
     labels = load_data(filepath[:-4] + '_label.mat')
     return images_average, labels
-
-    if averageImages == 1:  # for CNN only
-        if os.path.exists(filepath + 'images_average.mat'):
-            images_average = sio.loadmat(
-                filepath + 'images_average.mat')['images_average']
-            print('\n')
-            print('Load images_average done!')
-        else:
-            print('\n')
-            print('Generating average images over time windows...')
-            # Find the average response over time windows
-            for i in range(7):
-                if i == 0:
-                    temp = feats[:, i * 192:(i + 1) *
-                                 192]  # each window contains 64*3=192 data
-                else:
-                    temp += feats[:, i * 192:(i + 1) * 192]
-            av_feats = temp / 7
-            images_average = gen_images(np.array(locs_2d),
-                                        av_feats,
-                                        32,
-                                        normalize=False)
-            sio.savemat(filepath + 'images_average.mat',
-                        {'images_average': images_average})
-            print('Saving images_average done!')
-        del feats
-        images_average = images_average[np.newaxis, :]
-        print('The shape of images_average.shape', images_average.shape)
-        return images_average, labels
-    elif averageImages == 2:  # for mulit-frame model such as LSTM
-        if os.path.exists(filepath + 'images_timewin.mat'):
-            images_timewin = sio.loadmat(
-                filepath + 'images_timewin.mat')['images_timewin']
-            print('\n')
-            print('Load images_timewin done!')
-        else:
-            print('Generating images for all time windows...')
-            images_timewin = np.array([
-                gen_images(np.array(locs_2d),
-                           feats[:, i * 192:(i + 1) * 192],
-                           32,
-                           normalize=False)
-                for i in range(feats.shape[1] // 192)
-            ])
-            sio.savemat(filepath + 'images_timewin.mat',
-                        {'images_timewin': images_timewin})
-            print('Saving images for all time windows done!')
-        del feats
-        print('The shape of images_timewin is',
-              images_timewin.shape)  # (7, 2670, 32, 32, 3)
-        return images_timewin, labels
-    else:
-        if os.path.exists(filepath + 'images_average.mat'):
-            images_average = sio.loadmat(
-                filepath + 'images_average.mat')['images_average']
-            print('\n')
-            print('Load images_average done!')
-        else:
-            print('\n')
-            print('Generating average images over time windows...')
-            # Find the average response over time windows
-            for i in range(7):
-                if i == 0:
-                    temp = feats[:, i * 192:(i + 1) * 192]
-                else:
-                    temp += feats[:, i * 192:(i + 1) * 192]
-            av_feats = temp / 7
-            images_average = gen_images(np.array(locs_2d),
-                                        av_feats,
-                                        32,
-                                        normalize=False)
-            sio.savemat(filepath + 'images_average.mat',
-                        {'images_average': images_average})
-            print('Saving images_average done!')
-
-        if os.path.exists(filepath + 'images_timewin.mat'):
-            images_timewin = sio.loadmat(
-                filepath + 'images_timewin.mat')['images_timewin']
-            print('\n')
-            print('Load images_timewin done!')
-        else:
-            print('\n')
-            print('Generating images for all time windows...')
-            images_timewin = np.array([
-                gen_images(np.array(locs_2d),
-                           feats[:, i * 192:(i + 1) * 192],
-                           32,
-                           normalize=False)
-                for i in range(feats.shape[1] // 192)
-            ])
-            sio.savemat(filepath + 'images_timewin.mat',
-                        {'images_timewin': images_timewin})
-            print('Saving images for all time windows done!')
-
-        del feats
-        images_average = images_average[np.newaxis, :]
-        print('The shape of labels.shape', labels.shape)
-        print('The shape of images_average.shape',
-              images_average.shape)  # (1, 2670, 32, 32, 3)
-        print('The shape of images_timewin is',
-              images_timewin.shape)  # (7, 2670, 32, 32, 3)
-        return images_average, images_timewin, labels
 
 
 def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
@@ -656,7 +607,7 @@ def highpassfilter(data, Wn=4, srate=250):
     return np.asarray(new_data)
 
 
-def bandpassfilter(data, Wn=[4, 100], srate=250):
+def bandpassfilter(data, Wn=[4, 50], srate=250):
     b, a = signal.butter(4, Wn=Wn, btype='bandpass', fs=srate)
     new_data = []
     for e in data:

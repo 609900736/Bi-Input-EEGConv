@@ -252,10 +252,10 @@ def train_rawEEGConvNet(n_classes,
 
 
 def train_graphEEGConvNet(n_classes,
-                          Colors=8,
+                          Colors=5,
                           Chans=22,
-                          W=16,
-                          H=16,
+                          W=32,
+                          H=32,
                           beg=0,
                           end=4,
                           srate=250,
@@ -265,8 +265,10 @@ def train_graphEEGConvNet(n_classes,
                           patience=100,
                           drawflag=False,
                           restate=True,
-                          prep=True):
-    Samples = (end - beg) * srate
+                          prep=True,
+                          mode='potential',
+                          averageImages=1):
+    Samples = (end - beg) * srate // averageImages
     if prep:
         pp = '_pp'
     else:
@@ -304,10 +306,12 @@ def train_graphEEGConvNet(n_classes,
         filepath = os.path.join('data',
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
-        x_train = load_or_gen_filterbank_data(filepath,
-                                              beg=beg,
-                                              end=end,
-                                              srate=srate)
+        x_train = load_or_generate_images(filepath,
+                                          beg=beg,
+                                          end=end,
+                                          srate=srate,
+                                          mode=mode,
+                                          averageImages=averageImages)
         filepath = os.path.join('data',
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
@@ -315,10 +319,12 @@ def train_graphEEGConvNet(n_classes,
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
-        x_test = load_or_gen_filterbank_data(filepath,
-                                             beg=beg,
-                                             end=end,
-                                             srate=srate)
+        x_test = load_or_generate_images(filepath,
+                                         beg=beg,
+                                         end=end,
+                                         srate=srate,
+                                         mode=mode,
+                                         averageImages=averageImages)
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
@@ -392,7 +398,8 @@ def train_BiInputsEEGConvNet(n_classes,
                              patience=100,
                              drawflag=False,
                              restate=True,
-                             prep=True):
+                             prep=True,
+                             mode='potential'):
     Samples = (end - beg) * srate
     if prep:
         pp = '_pp'
@@ -505,10 +512,12 @@ def train_BiInputsEEGConvNet(n_classes,
         filepath = os.path.join('data',
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
-        x_train = load_or_gen_filterbank_data(filepath,
-                                              beg=beg,
-                                              end=end,
-                                              srate=srate)
+        x_train = load_or_generate_images(filepath,
+                                          beg=beg,
+                                          end=end,
+                                          srate=srate,
+                                          mode=mode,
+                                          averageImages=64)
         filepath = os.path.join('data',
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
@@ -516,10 +525,12 @@ def train_BiInputsEEGConvNet(n_classes,
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
-        x_test = load_or_gen_filterbank_data(filepath,
-                                             beg=beg,
-                                             end=end,
-                                             srate=srate)
+        x_test = load_or_generate_images(filepath,
+                                         beg=beg,
+                                         end=end,
+                                         srate=srate,
+                                         mode=mode,
+                                         averageImages=64)
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')

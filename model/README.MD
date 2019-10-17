@@ -21,3 +21,7 @@ Introduction of existed saved models:
 	2019_10_16_19_15_32:	EEGNet(8,2) with 4Hz highpass filtered data
 	2019_10_16_20_11_56:	EEGNet(8,2) with 4Hz highpass filtered data
 	2019_10_16_21_1_57:		EEGNet(8,2) with 4-100Hz bandpass filtered data
+	2019_10_17_10_10_58:	EEGNet(8,2) with 4-100Hz bandpass filtered data
+	2019_10_17_10_55_54:	EEGNet(8,2) with 4-100Hz bandpass filtered data
+	2019_10_17_15_29_37:	EEGNet(8,2) with 4-50Hz bandpass filtered data
+	2019_10_17_16_59_39:	EEGNet(8,2) with 4-50Hz bandpass filtered data

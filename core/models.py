@@ -117,7 +117,7 @@ def _old_rawEEGConvModel(Chans,
         s = Activation('elu')(s)
         s = AveragePooling2D((1, 4))(s)
         s = dropoutType(dropoutRate)(s)
-        s = SeparableConv2D(1*D, (1, 16), padding='same', use_bias=False)(s)
+        s = SeparableConv2D(1 * D, (1, 16), padding='same', use_bias=False)(s)
         s = BatchNormalization(axis=-1)(s)
         s = Activation('elu')(s)
         s = AveragePooling2D((1, 8))(s)
@@ -158,9 +158,9 @@ def graphEEGConvModel(Colors,
                       W,
                       dropoutRate=0.5,
                       kernLength=64,
-                      F3=32,
-                      F4=40,
-                      F5=24,
+                      F3=16,
+                      F4=32,
+                      F5=8,
                       dtype=tf.float32,
                       dropoutType='Dropout'):
     """
@@ -178,21 +178,21 @@ def graphEEGConvModel(Colors,
         raise ValueError('dropoutType must be one of SpatialDropout2D, '
                          'SpatialDropout3D or Dropout, passed as a string.')
     # Learn from EEG graphs
-    input_g = Input(shape=(Colors, H, W, Samples), dtype=dtype)
+    input_g = Input(shape=(Samples, H, W, Colors), dtype=dtype)
     g = Conv3D(F3, (3, 3, kernLength), padding='same', use_bias=False)(input_g)
-    g = BatchNormalization(axis=1)(g)
+    g = BatchNormalization(axis=-1)(g)
+    g = Activation('relu')(g)
+    g = AveragePooling3D((3, 3, 1))(g)
+    g = dropoutType(dropoutRate)(g)
+    g = Conv3D(F4, (3, 3, kernLength), padding='same', use_bias=False)(g)
+    g = BatchNormalization(axis=-1)(g)
     g = Activation('relu')(g)
     g = AveragePooling3D((3, 3, 4))(g)
     g = dropoutType(dropoutRate)(g)
-    g = Conv3D(F4, (3, 3, kernLength), padding='same', use_bias=False)(g)
-    g = BatchNormalization(axis=1)(g)
+    g = Conv3D(F5, (3, 3, kernLength), padding='same', use_bias=False)(g)
+    g = BatchNormalization(axis=-1)(g)
     g = Activation('relu')(g)
     g = AveragePooling3D((3, 3, 8))(g)
-    g = dropoutType(dropoutRate)(g)
-    g = Conv3D(F5, (3, 3, kernLength), padding='same', use_bias=False)(g)
-    g = BatchNormalization(axis=1)(g)
-    g = Activation('relu')(g)
-    g = AveragePooling3D((3, 3, 16))(g)
     g = dropoutType(dropoutRate)(g)
     flatten = Flatten()(g)
 
@@ -209,29 +209,27 @@ def rawEEGConvNet(n_classes,
     # Learn from raw EEG signals
     input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
     s = model(input_s)
-    # _fc_s = Dense(n_classes**2)(s)
-    # _fc_s = BatchNormalization(axis=1)(_fc_s)
-    _output_s = Dense(n_classes,
-                      activation='softmax',
-                      kernel_constraint=max_norm(norm_rate))(s)
+    # s = Dense(n_classes**2)(s)
+    # s = BatchNormalization(axis=1)(s)
+    s = Dense(n_classes, kernel_constraint=max_norm(norm_rate))(s)
+    _output_s = Activation('softmax')
 
     return Model(inputs=input_s, outputs=_output_s)
 
 
 def graphEEGConvNet(n_classes,
                     model,
-                    Colors=16,
-                    H=16,
-                    W=16,
+                    Colors=5,
+                    H=32,
+                    W=32,
                     Samples=1000,
                     norm_rate=0.25,
                     dtype=tf.float32):
     # Learn from EEG graphs
     input_g = Input(shape=(Samples, H, W, Colors), dtype=dtype)
     g = model(input_g)
-    _output_g = Dense(n_classes,
-                      activation='softmax',
-                      kernel_constraint=max_norm(norm_rate))(g)
+    g = Dense(n_classes, kernel_constraint=max_norm(norm_rate))(g)
+    _output_g = Activation('softmax')(g)
 
     return Model(inputs=input_g, outputs=_output_g)
 
