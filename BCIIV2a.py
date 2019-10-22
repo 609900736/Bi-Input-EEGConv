@@ -25,18 +25,18 @@ if __name__ == '__main__':
     #              prep=False,
     #              beg=0,
     #              end=4)
-    # train_rawEEGConvNet(4,
-    #                     srate=srate,
-    #                     epochs=1200,
-    #                     patience=300,
-    #                     prep=False,
-    #                     beg=0,
-    #                     end=4)
-    train_graphEEGConvNet(4,
-                          srate=srate,
-                          epochs=1200,
-                          patience=300,
-                          prep=False,
-                          beg=0,
-                          end=4)
+    train_rawEEGConvNet(4,
+                        srate=srate,
+                        epochs=1200,
+                        patience=300,
+                        prep=False,
+                        beg=0,
+                        end=4)
+    # train_graphEEGConvNet(4,
+    #                       srate=srate,
+    #                       epochs=300,
+    #                       patience=100,
+    #                       prep=False,
+    #                       beg=0,
+    #                       end=4)
     pass

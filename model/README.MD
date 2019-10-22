@@ -25,3 +25,4 @@ Introduction of existed saved models:
 	2019_10_17_10_55_54:	EEGNet(8,2) with 4-100Hz bandpass filtered data
 	2019_10_17_15_29_37:	EEGNet(8,2) with 4-50Hz bandpass filtered data
 	2019_10_17_16_59_39:	EEGNet(8,2) with 4-50Hz bandpass filtered data
+	2019_10_22_15_53_18:	EEGNet(8,2) with unfiltered data and l1_l2(.01, .01) regularizer in pointwise convolution

@@ -117,7 +117,7 @@ def gen_images(locs,
 
         locs        : ndarray, An array with shape [nChannels, 2] containing X, Y coordinates
                       for each electrode.
-        features    : ndarray, Feature matrix as [nChannels, nSamples, nColors] Features are as columns.
+        features    : ndarray, Feature matrix as [nSamples, nChannels, nColors] Features are as columns.
                       Features corresponding to each frequency band are concatenated.
         nGridpoints : int, Number of pixels in the output images
         normalize   : bool, Flag for whether to normalize each band over all samples
@@ -132,8 +132,7 @@ def gen_images(locs,
 
         interp      : ndarray, Tensor of size [nSamples, H, W, nColors] containing generated images.
     """
-    feat_array_temp = np.swapaxes(features, 0,
-                                  1)  # [nSamples, nChannels, nColors]
+    feat_array_temp = features
     nChannels = feat_array_temp.shape[1]  # Number of electrodes
     nColors = feat_array_temp.shape[2]
 
@@ -181,8 +180,10 @@ def gen_images(locs,
                                           feat_array_temp[i, :, c],
                                           (grid_x, grid_y),
                                           method='cubic',
-                                          fill_value=np.nan)
-        print('Interpolating {0}/{1}\r'.format(i + 1, nSamples), end='\r')
+                                          fill_value=np.nan).T
+        print('Interpolating {0:0>4d}/{1:0>4d}\r'.format(i + 1, nSamples),
+              end='\r')
+    print()
 
     # Normalizing
     for c in range(nColors):
@@ -280,7 +281,7 @@ def load_or_generate_images(filepath,
         end             : num, second when imegery tasks ends, default is 4
         srate           : int, the sample rate of raw data, default is 250 
         mode            : str, should be one of strings among 'potential', 'energy', and 'envelope', default is 'potential'
-        averageImages   : int, length of window to mix images in time dimension, like averagepooling2D, default is 1
+        averageImages   : int, length of window to mix images in time dimension, like AveragePooling2D(1, averageImages), default is 1
 
     Output:
 
@@ -291,9 +292,9 @@ def load_or_generate_images(filepath,
         type num means int or float
     """
     if locspath is None:
-        locspath = 'data/Neuroscan_locs_orig.mat'
+        locspath = 'data/22scan_locs.mat'
     print('-' * 100)
-    print('Loading original data...')
+    print('Loading data...')
     locs_3d = load_locs(locspath)
     locs_2d = []
     # Convert to 2D
@@ -309,29 +310,34 @@ def load_or_generate_images(filepath,
             print('Load images_average done!')
         else:
             print('Generating average images over time windows...')
-            feats = load_or_gen_interestingband_data(filepath,
-                                                     beg=beg,
-                                                     end=end,
-                                                     srate=srate)
+            # feats = load_or_gen_interestingband_data(filepath,
+            #                                          beg=beg,
+            #                                          end=end,
+            #                                          srate=srate)
+            feats = load_data(filepath, label=False)
+            feats = bandpassfilter(feats)
+            feats = feats[:, :, int(beg * srate):int(end * srate), np.newaxis]
             images_average = []
-            images_average.append(
-                gen_images(np.asarray(locs_2d),
-                           np.asarray(
-                               np.average(feats[n, :, i *
-                                                averageImages:(i + 1) *
-                                                averageImages, :],
-                                          axis=2)
-                               for i in range(feats.shape[2] //
-                                              averageImages)),
-                           32,
-                           normalize=False) for n in range(feats.shape[0]))
+            for n in range(feats.shape[0]):
+                print('Generate trial {:0>3d}'.format(n + 1))
+                av_feats = []
+                for i in range(feats.shape[2] // averageImages):
+                    av_feats.append(
+                        np.average(feats[n, :, i * averageImages:(i + 1) *
+                                         averageImages, :],
+                                   axis=1))
+                images_average.append(
+                    gen_images(np.asarray(locs_2d),
+                               np.asarray(av_feats),
+                               32,
+                               normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
                 filepath[:-4] + '_potential_' + str(averageImages) + '.mat',
                 {'images_average': images_average})
+            print()
             print('Saving images_average done!')
             del feats
-        images_average = images_average[np.newaxis, :]
         print('The shape of images_average.shape', images_average.shape)
         pass
     elif mode == 'energy':
@@ -349,24 +355,25 @@ def load_or_generate_images(filepath,
                                     axis=2)
             feats = np.abs(Zxx)
             images_average = []
-            images_average.append(
-                gen_images(np.asarray(locs_2d),
-                           np.asarray(
-                               np.average(feats[n, :, i *
-                                                averageImages:(i + 1) *
-                                                averageImages, :],
-                                          axis=2)
-                               for i in range(feats.shape[2] //
-                                              averageImages)),
-                           32,
-                           normalize=False) for n in range(feats.shape[0]))
+            for n in range(feats.shape[0]):
+                print('Generate trial {:0>3d}'.format(n + 1))
+                av_feats = []
+                for i in range(feats.shape[2] // averageImages):
+                    av_feats.append(
+                        np.average(feats[n, :, i * averageImages:(i + 1) *
+                                         averageImages, :],
+                                   axis=1))
+                images_average.append(
+                    gen_images(np.asarray(locs_2d),
+                               np.asarray(av_feats),
+                               32,
+                               normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
                 filepath[:-4] + '_potential_' + str(averageImages) + '.mat',
                 {'images_average': images_average})
             print('Saving images_average done!')
             del feats
-        images_average = images_average[np.newaxis, :]
         print('The shape of images_average.shape', images_average.shape)
         pass
     elif mode == 'envelope':
@@ -607,7 +614,7 @@ def highpassfilter(data, Wn=4, srate=250):
     return np.asarray(new_data)
 
 
-def bandpassfilter(data, Wn=[4, 50], srate=250):
+def bandpassfilter(data, Wn=[4, 100], srate=250):
     b, a = signal.butter(4, Wn=Wn, btype='bandpass', fs=srate)
     new_data = []
     for e in data:
