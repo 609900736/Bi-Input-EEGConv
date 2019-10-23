@@ -178,6 +178,7 @@ def train_rawEEGConvNet(n_classes,
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_data(filepath, label=False)
+        x_train = bandpassfilter(x_train)
         x_train = x_train[:, :, int(beg * srate):int(end * srate), np.newaxis]
         filepath = os.path.join('data',
                                 str(end) + 's', 'Train',
@@ -187,6 +188,7 @@ def train_rawEEGConvNet(n_classes,
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_data(filepath, label=False)
+        x_test = bandpassfilter(x_test)
         x_test = x_test[:, :, int(beg * srate):int(end * srate), np.newaxis]
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
@@ -249,8 +251,8 @@ def train_rawEEGConvNet(n_classes,
 
 def train_graphEEGConvNet(n_classes,
                           Colors=1,
-                          W=32,
-                          H=32,
+                          H=30,
+                          W=35,
                           beg=0,
                           end=4,
                           srate=250,
@@ -306,7 +308,9 @@ def train_graphEEGConvNet(n_classes,
                                           end=end,
                                           srate=srate,
                                           mode=mode,
-                                          averageImages=averageImages)
+                                          averageImages=averageImages,
+                                          H=H,
+                                          W=W)
         filepath = os.path.join('data',
                                 str(end) + 's', 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
@@ -319,7 +323,9 @@ def train_graphEEGConvNet(n_classes,
                                          end=end,
                                          srate=srate,
                                          mode=mode,
-                                         averageImages=averageImages)
+                                         averageImages=averageImages,
+                                         H=H,
+                                         W=W)
         filepath = os.path.join('data',
                                 str(end) + 's', 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')

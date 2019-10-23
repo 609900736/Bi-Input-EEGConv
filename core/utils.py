@@ -103,7 +103,8 @@ def load_data(datafile, label=True):
 
 def gen_images(locs,
                features,
-               nGridpoints,
+               H,
+               W,
                normalize=True,
                augment=False,
                pca=False,
@@ -119,7 +120,8 @@ def gen_images(locs,
                       for each electrode.
         features    : ndarray, Feature matrix as [nSamples, nChannels, nColors] Features are as columns.
                       Features corresponding to each frequency band are concatenated.
-        nGridpoints : int, Number of pixels in the output images
+        H           : int, Number of pixels in the output images height
+        W           : int, Number of pixels in the output images width
         normalize   : bool, Flag for whether to normalize each band over all samples
         augment     : bool, Flag for generating augmented images
         pca         : bool, Flag for PCA based data augmentation
@@ -154,11 +156,11 @@ def gen_images(locs,
     nSamples = feat_array_temp.shape[0]
 
     # Interpolate the values
-    grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):nGridpoints * 1j,
-                              min(locs[:, 1]):max(locs[:, 1]):nGridpoints * 1j]
+    grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):H * 1j,
+                              min(locs[:, 1]):max(locs[:, 1]):W * 1j]
     interp = []
     for c in range(nColors):
-        interp.append(np.zeros([nSamples, nGridpoints, nGridpoints]))
+        interp.append(np.zeros([nSamples, H, W]))
 
     # Generate edgeless images
     if edgeless:
@@ -269,7 +271,9 @@ def load_or_generate_images(filepath,
                             end=4,
                             srate=250,
                             mode='potentialMap',
-                            averageImages=1):
+                            averageImages=1,
+                            H=30,
+                            W=35):
     """
     Generates EEG images
 
@@ -282,6 +286,8 @@ def load_or_generate_images(filepath,
         srate           : int, the sample rate of raw data, default is 250 
         mode            : str, should be one of strings among 'potential', 'energy', and 'envelope', default is 'potential'
         averageImages   : int, length of window to mix images in time dimension, like AveragePooling2D(1, averageImages), default is 1
+        H               : int, 
+        W               : int, 
 
     Output:
 
@@ -305,6 +311,7 @@ def load_or_generate_images(filepath,
         if os.path.exists(filepath[:-4] + '_potential_' + str(averageImages) +
                           '.mat'):
             images_average = sio.loadmat(filepath[:-4] + '_potential_' +
+                                         str(H) + '_' + str(W) +
                                          str(averageImages) +
                                          '.mat')['images_average']
             print('Load images_average done!')
@@ -329,11 +336,13 @@ def load_or_generate_images(filepath,
                 images_average.append(
                     gen_images(np.asarray(locs_2d),
                                np.asarray(av_feats),
-                               32,
+                               H,
+                               W,
                                normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
-                filepath[:-4] + '_potential_' + str(averageImages) + '.mat',
+                filepath[:-4] + '_potential_' + str(H) + '_' + str(W) +
+                str(averageImages) + '.mat',
                 {'images_average': images_average})
             print()
             print('Saving images_average done!')
@@ -343,8 +352,8 @@ def load_or_generate_images(filepath,
     elif mode == 'energy':
         if os.path.exists(filepath[:-4] + '_energy_' + str(averageImages) +
                           '.mat'):
-            images_average = sio.loadmat(filepath[:-4] + '_energy_' +
-                                         str(averageImages) +
+            images_average = sio.loadmat(filepath[:-4] + '_energy_' + str(H) +
+                                         '_' + str(W) + str(averageImages) +
                                          '.mat')['images_average']
             print('Load images_average done!')
         else:
@@ -370,7 +379,8 @@ def load_or_generate_images(filepath,
                                normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
-                filepath[:-4] + '_potential_' + str(averageImages) + '.mat',
+                filepath[:-4] + '_potential_' + str(H) + '_' + str(W) +
+                str(averageImages) + '.mat',
                 {'images_average': images_average})
             print('Saving images_average done!')
             del feats

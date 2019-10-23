@@ -224,8 +224,12 @@ def rawEEGConvNet(n_classes,
     # Learn from raw EEG signals
     input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
     s = model(input_s)
-    # s = Dense(n_classes**2)(s)
-    # s = BatchNormalization(axis=1)(s)
+    # s = Dense(32, kernel_regularizer=l1_l2())(s)
+    # s = BatchNormalization(axis=-1)(s)
+    # s = Activation('relu')(s)
+    # s = Dense(32, kernel_regularizer=l1_l2())(s)
+    # s = BatchNormalization(axis=-1)(s)
+    # s = Activation('relu')(s)
     s = Dense(n_classes, kernel_constraint=max_norm(norm_rate))(s)
     _output_s = Activation('softmax')(s)
 
