@@ -156,8 +156,8 @@ def gen_images(locs,
     nSamples = feat_array_temp.shape[0]
 
     # Interpolate the values
-    grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):H * 1j,
-                              min(locs[:, 1]):max(locs[:, 1]):W * 1j]
+    grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):W * 1j,
+                              min(locs[:, 1]):max(locs[:, 1]):H * 1j]
     interp = []
     for c in range(nColors):
         interp.append(np.zeros([nSamples, H, W]))
@@ -308,10 +308,10 @@ def load_or_generate_images(filepath,
         locs_2d.append(azim_proj(e))
 
     if mode == 'potential':
-        if os.path.exists(filepath[:-4] + '_potential_' + str(averageImages) +
-                          '.mat'):
+        if os.path.exists(filepath[:-4] + '_potential_' + str(H) + '_' +
+                          str(W) + '_' + str(averageImages) + '.mat'):
             images_average = sio.loadmat(filepath[:-4] + '_potential_' +
-                                         str(H) + '_' + str(W) +
+                                         str(H) + '_' + str(W) + '_' +
                                          str(averageImages) +
                                          '.mat')['images_average']
             print('Load images_average done!')
@@ -323,7 +323,7 @@ def load_or_generate_images(filepath,
             #                                          srate=srate)
             feats = load_data(filepath, label=False)
             feats = bandpassfilter(feats)
-            feats = feats[:, :, int(beg * srate):int(end * srate), np.newaxis]
+            feats = feats[:, :, :, np.newaxis]
             images_average = []
             for n in range(feats.shape[0]):
                 print('Generate trial {:0>3d}'.format(n + 1))
@@ -341,19 +341,24 @@ def load_or_generate_images(filepath,
                                normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
-                filepath[:-4] + '_potential_' + str(H) + '_' + str(W) +
+                filepath[:-4] + '_potential_' + str(H) + '_' + str(W) + '_' +
                 str(averageImages) + '.mat',
                 {'images_average': images_average})
             print()
             print('Saving images_average done!')
             del feats
+        images_average = images_average[:,
+                                        m.floor(beg *
+                                                srate):m.ceil(end *
+                                                              srate), :, :, :]
         print('The shape of images_average.shape', images_average.shape)
         pass
     elif mode == 'energy':
-        if os.path.exists(filepath[:-4] + '_energy_' + str(averageImages) +
-                          '.mat'):
+        if os.path.exists(filepath[:-4] + '_energy_' + str(H) + '_' + str(W) +
+                          '_' + str(averageImages) + '.mat'):
             images_average = sio.loadmat(filepath[:-4] + '_energy_' + str(H) +
-                                         '_' + str(W) + str(averageImages) +
+                                         '_' + str(W) + '_' +
+                                         str(averageImages) +
                                          '.mat')['images_average']
             print('Load images_average done!')
         else:
@@ -379,11 +384,15 @@ def load_or_generate_images(filepath,
                                normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
-                filepath[:-4] + '_potential_' + str(H) + '_' + str(W) +
+                filepath[:-4] + '_potential_' + str(H) + '_' + str(W) + '_' +
                 str(averageImages) + '.mat',
                 {'images_average': images_average})
             print('Saving images_average done!')
             del feats
+        images_average = images_average[:,
+                                        m.floor(beg *
+                                                srate):m.ceil(end *
+                                                              srate), :, :, :]
         print('The shape of images_average.shape', images_average.shape)
         pass
     elif mode == 'envelope':

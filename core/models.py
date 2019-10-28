@@ -1,6 +1,5 @@
 # coding:utf-8
 
-# import tensorflow.python.keras.api._v1.keras.layers
 import tensorflow as tf
 from tensorflow.python.keras import Input, Model
 from tensorflow.python.keras.layers import Dense, \
@@ -23,7 +22,7 @@ from tensorflow.python.keras.layers import Dense, \
                                            Lambda, \
                                            Attention, \
                                            Multiply, \
-                                           Embedding
+                                           Add
 from tensorflow.python.keras.constraints import max_norm, \
                                                 min_max_norm, \
                                                 unit_norm
@@ -621,6 +620,93 @@ def ShallowConvNet(nb_classes, Chans=64, Samples=128, dropoutRate=0.5):
     softmax = Activation('softmax')(dense)
 
     return Model(inputs=input_main, outputs=softmax)
+
+
+# Multi-branch 3D CNN from `A Multi-Branch 3D Convolutional Neural Network
+# for EEG-Based Motor Imagery Classification`, IEEE TRANSACTIONS ON NEURAL
+# SYSTEMS AND REHABILITATION ENGINEERING, VOL. 27, NO. 10, OCTOBER 2019
+def SRF3DCNN(nClasses, H, W, Samples):
+    _input = Input(shape=(Samples, H, W, 16), name='SRF_Input')
+    srf = Conv3D(32, (1, 2, 2), strides=(1, 2, 2), padding='same')(_input)
+    srf = BatchNormalization(axis=-1)(srf)
+    srf = Activation('elu')(srf)
+    # srf = SpatialDropout3D(0.5)(srf)
+    srf = Conv3D(64, (1, 2, 2), strides=(1, 2, 2), padding='same')(srf)
+    srf = BatchNormalization(axis=-1)(srf)
+    srf = Activation('elu')(srf)
+    # srf = SpatialDropout3D(0.5)(srf)
+    flatten = Flatten()(srf)
+    dense = Dense(32)(flatten)
+    dense = BatchNormalization()(dense)
+    dense = Activation('relu')(dense)
+    dense = Dense(32)(dense)
+    dense = BatchNormalization()(dense)
+    dense = Activation('relu')(dense)
+    dense = Dense(nClasses)(dense)
+    _output = Activation('softmax', name='SRF_Output')(dense)
+    return Model(inputs=_input, outputs=_output, name='SRF')
+
+
+def MRF3DCNN(nClasses, H, W, Samples):
+    _input = Input(shape=(Samples, H, W, 16), name='MRF_Input')
+    mrf = Conv3D(32, (3, 2, 2), strides=(2, 2, 2), padding='same')(_input)
+    mrf = BatchNormalization(axis=-1)(mrf)
+    mrf = Activation('elu')(mrf)
+    # mrf = SpatialDropout3D(0.5)(mrf)
+    mrf = Conv3D(64, (3, 2, 2), strides=(2, 2, 2), padding='same')(mrf)
+    mrf = BatchNormalization(axis=-1)(mrf)
+    mrf = Activation('elu')(mrf)
+    # mrf = SpatialDropout3D(0.5)(mrf)
+    flatten = Flatten()(mrf)
+    dense = Dense(32)(flatten)
+    dense = BatchNormalization()(dense)
+    dense = Activation('relu')(dense)
+    dense = Dense(32)(dense)
+    dense = BatchNormalization()(dense)
+    dense = Activation('relu')(dense)
+    dense = Dense(nClasses)(dense)
+    _output = Activation('softmax', name='MRF_Output')(dense)
+    return Model(inputs=_input, outputs=_output, name='MRF')
+
+
+def LRF3DCNN(nClasses, H, W, Samples):
+    _input = Input(shape=(Samples, H, W, 16), name='LRF_Input')
+    lrf = Conv3D(32, (5, 2, 2), strides=(4, 2, 2), padding='same')(_input)
+    lrf = BatchNormalization(axis=-1)(lrf)
+    lrf = Activation('elu')(lrf)
+    # lrf = SpatialDropout3D(0.5)(lrf)
+    lrf = Conv3D(64, (5, 2, 2), strides=(4, 2, 2), padding='same')(lrf)
+    lrf = BatchNormalization(axis=-1)(lrf)
+    lrf = Activation('elu')(lrf)
+    # lrf = SpatialDropout3D(0.5)(lrf)
+    flatten = Flatten()(lrf)
+    dense = Dense(32)(flatten)
+    dense = BatchNormalization()(dense)
+    dense = Activation('relu')(dense)
+    dense = Dense(32)(dense)
+    dense = BatchNormalization()(dense)
+    dense = Activation('relu')(dense)
+    dense = Dense(nClasses)(dense)
+    _output = Activation('softmax', name='LRF_Output')(dense)
+    return Model(inputs=_input, outputs=_output, name='LRF')
+
+
+def MB3DCNN(nClasses, H, W, Samples):
+    _input = Input(shape=(Samples, H, W, 1), name='MB_Input')
+    mb = Conv3D(16, (5, 3, 3), strides=(4, 2, 2), padding='same')(_input)
+    mb = BatchNormalization(axis=-1)(mb)
+    mb = Activation('elu')(mb)
+    # mb = SpatialDropout3D(0.5)(mb)
+
+    _srf_output = SRF3DCNN(nClasses, mb.shape[2], mb.shape[3], mb.shape[1])(mb)
+    _mrf_output = MRF3DCNN(nClasses, mb.shape[2], mb.shape[3], mb.shape[1])(mb)
+    _lrf_output = LRF3DCNN(nClasses, mb.shape[2], mb.shape[3], mb.shape[1])(mb)
+
+    _add = Add()([_srf_output, _mrf_output, _lrf_output])
+    _output = Activation('softmax', name='MB_Output')(_add)
+    return Model(inputs=_input,
+                 outputs=[_output],
+                 name='MB3DCNN')
 
 
 if __name__ == '__main__':

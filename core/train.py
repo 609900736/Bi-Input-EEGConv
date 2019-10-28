@@ -2,21 +2,145 @@
 
 import os
 import time
+import math
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
 from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data, load_or_generate_images, highpassfilter, bandpassfilter
-from core.models import EEGNet, rawEEGConvModel, rawEEGConvNet, graphEEGConvModel, graphEEGConvNet, BiInputsEEGConvNet, ShallowConvNet, DeepConvNet
+from core.models import EEGNet, rawEEGConvModel, rawEEGConvNet, graphEEGConvModel, graphEEGConvNet, BiInputsEEGConvNet, ShallowConvNet, DeepConvNet, MB3DCNN
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.models import load_model
 
 
-def train_EEGNet(n_classes,
+def train_MB3DCNN(nClasses,
+                  H,
+                  W,
+                  beg=0,
+                  end=4,
+                  srate=250,
+                  dataSelect='4s',
+                  batch_size=10,
+                  epochs=500,
+                  verbose=2,
+                  patience=100,
+                  drawflag=False,
+                  restate=True,
+                  prep=False,
+                  mode='potential',
+                  averageImages=1):
+    Samples = math.ceil(end * srate - beg * srate)
+    if prep:
+        pp = '_pp'
+    else:
+        pp = ''
+
+    model = MB3DCNN(nClasses, H=H, W=W, Samples=Samples)
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
+                  loss=tf.keras.losses.sparse_categorical_crossentropy,
+                  metrics=['accuracy'])
+    model.summary()
+    # export graph of the model
+    tf.keras.utils.plot_model(model, 'MB3DCNN.png', show_shapes=True)
+
+    earlystopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                     min_delta=0,
+                                                     patience=patience,
+                                                     verbose=0,
+                                                     mode='auto')
+
+    tm = time.localtime()
+    history = []
+    if not os.path.exists('model'):  # 判断是否存在
+        os.makedirs('model')  # 不存在则创建
+    for i in range(1, 10):
+        filepath = os.path.join('data', dataSelect, 'Train',
+                                'A0' + str(i) + 'T' + pp + '.mat')
+        x_train = load_or_generate_images(filepath,
+                                          beg=beg,
+                                          end=end,
+                                          srate=srate,
+                                          mode=mode,
+                                          averageImages=averageImages,
+                                          H=H,
+                                          W=W)
+        filepath = os.path.join('data', dataSelect, 'Train',
+                                'A0' + str(i) + 'T_label' + pp + '.mat')
+        y_train = load_data(filepath)
+        filepath = os.path.join('data', dataSelect, 'Test',
+                                'A0' + str(i) + 'E' + pp + '.mat')
+        x_test = load_or_generate_images(filepath,
+                                         beg=beg,
+                                         end=end,
+                                         srate=srate,
+                                         mode=mode,
+                                         averageImages=averageImages,
+                                         H=H,
+                                         W=W)
+        filepath = os.path.join('data', dataSelect, 'Test',
+                                'A0' + str(i) + 'E_label' + pp + '.mat')
+        y_test = load_data(filepath)
+
+        filepath = os.path.join(
+            'model',
+            str(tm.tm_year) + '_' + str(tm.tm_mon) + '_' + str(tm.tm_mday) +
+            '_' + str(tm.tm_hour) + '_' + str(tm.tm_min) + '_' +
+            str(tm.tm_sec) + '_A0' + str(i) + '_MB3DCNN.h5')
+
+        checkpointer = ModelCheckpoint(filepath=filepath,
+                                       verbose=1,
+                                       save_best_only=True)
+
+        history.append(
+            model.fit(x=x_train,
+                      y=[y_train],
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      callbacks=[checkpointer, earlystopping],
+                      verbose=verbose,
+                      validation_data=[x_test, [y_test]]).history)
+
+        if restate:
+            model.reset_states()
+
+    filepath = os.path.join(
+        'model',
+        str(tm.tm_year) + '_' + str(tm.tm_mon) + '_' + str(tm.tm_mday) + '_' +
+        str(tm.tm_hour) + '_' + str(tm.tm_min) + '_' + str(tm.tm_sec) +
+        '_MB3DCNN.npy')
+    np.save(filepath, history)
+    #history = np.load(filepath,allow_pickle=True)
+    if drawflag:
+        for i in range(1, 10):
+            h = history.pop(0)
+
+            # Plot training & validation accuracy values
+            plt.figure(2 * i - 1)
+            plt.plot(h['acc'])
+            plt.plot(h['val_acc'])
+            plt.title('Model accuracy')
+            plt.ylabel('Accuracy')
+            plt.xlabel('Epoch')
+            plt.legend(['Train', 'Test'], loc='upper left')
+
+            # Plot training & validation loss values
+            plt.figure(2 * i)
+            plt.plot(h['loss'])
+            plt.plot(h['val_loss'])
+            plt.title('Model loss')
+            plt.ylabel('Loss')
+            plt.xlabel('Epoch')
+            plt.legend(['Train', 'Test'], loc='upper left')
+
+        plt.show()
+
+
+def train_EEGNet(nClasses,
                  Chans=22,
                  beg=0,
                  end=4,
                  srate=250,
+                 dataSelect='4s',
                  batch_size=10,
                  epochs=500,
                  verbose=2,
@@ -24,13 +148,13 @@ def train_EEGNet(n_classes,
                  drawflag=False,
                  restate=True,
                  prep=False):
-    Samples = (end - beg) * srate
+    Samples = math.ceil(end * srate - beg * srate)
     if prep:
         pp = '_pp'
     else:
         pp = ''
 
-    model = EEGNet(n_classes, Chans=Chans, Samples=Samples)
+    model = EEGNet(nClasses, Chans=Chans, Samples=Samples)
     model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss=tf.keras.losses.sparse_categorical_crossentropy,
                   metrics=['accuracy'])
@@ -52,24 +176,24 @@ def train_EEGNet(n_classes,
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
     for i in range(1, 10):
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_data(filepath, label=False)
         x_train = bandpassfilter(x_train)
-        x_train = x_train[:, :, int(beg * srate):int(end * srate), np.newaxis]
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        x_train = x_train[:, :,
+                          math.floor(beg * srate):math.ceil(end *
+                                                            srate), np.newaxis]
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_data(filepath, label=False)
         x_test = bandpassfilter(x_test)
-        x_test = x_test[:, :, int(beg * srate):int(end * srate), np.newaxis]
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        x_test = x_test[:, :,
+                        math.floor(beg * srate):math.ceil(end *
+                                                          srate), np.newaxis]
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
 
@@ -127,12 +251,13 @@ def train_EEGNet(n_classes,
         plt.show()
 
 
-def train_rawEEGConvNet(n_classes,
+def train_rawEEGConvNet(nClasses,
                         Chans=22,
                         beg=0,
                         end=4,
                         Colors=1,
                         srate=250,
+                        dataSelect='4s',
                         batch_size=10,
                         epochs=500,
                         verbose=2,
@@ -140,7 +265,7 @@ def train_rawEEGConvNet(n_classes,
                         drawflag=False,
                         restate=True,
                         prep=False):
-    Samples = (end - beg) * srate
+    Samples = math.ceil(end * srate - beg * srate)
     if prep:
         pp = '_pp'
     else:
@@ -151,7 +276,7 @@ def train_rawEEGConvNet(n_classes,
     # export graph of the model
     tf.keras.utils.plot_model(model, 'rawEEGConvModel.png', show_shapes=True)
 
-    model = rawEEGConvNet(n_classes,
+    model = rawEEGConvNet(nClasses,
                           model,
                           Chans=Chans,
                           Samples=Samples,
@@ -174,24 +299,24 @@ def train_rawEEGConvNet(n_classes,
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
     for i in range(1, 10):
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_data(filepath, label=False)
         x_train = bandpassfilter(x_train)
-        x_train = x_train[:, :, int(beg * srate):int(end * srate), np.newaxis]
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        x_train = x_train[:, :,
+                          math.floor(beg * srate):math.ceil(end *
+                                                            srate), np.newaxis]
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_data(filepath, label=False)
         x_test = bandpassfilter(x_test)
-        x_test = x_test[:, :, int(beg * srate):int(end * srate), np.newaxis]
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        x_test = x_test[:, :,
+                        math.floor(beg * srate):math.ceil(end *
+                                                          srate), np.newaxis]
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
 
@@ -249,13 +374,14 @@ def train_rawEEGConvNet(n_classes,
         plt.show()
 
 
-def train_graphEEGConvNet(n_classes,
+def train_graphEEGConvNet(nClasses,
                           Colors=1,
                           H=30,
                           W=35,
                           beg=0,
                           end=4,
                           srate=250,
+                          dataSelect='4s',
                           batch_size=10,
                           epochs=500,
                           verbose=2,
@@ -265,7 +391,7 @@ def train_graphEEGConvNet(n_classes,
                           prep=True,
                           mode='potential',
                           averageImages=1):
-    Samples = (end - beg) * srate // averageImages
+    Samples = math.ceil(end * srate - beg * srate) // averageImages
     if prep:
         pp = '_pp'
     else:
@@ -276,7 +402,7 @@ def train_graphEEGConvNet(n_classes,
     # export graph of the model
     tf.keras.utils.plot_model(model, 'graphEEGConvModel.png', show_shapes=True)
 
-    model = graphEEGConvNet(n_classes,
+    model = graphEEGConvNet(nClasses,
                             model,
                             Colors=Colors,
                             Samples=Samples,
@@ -300,8 +426,7 @@ def train_graphEEGConvNet(n_classes,
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
     for i in range(1, 10):
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_or_generate_images(filepath,
                                           beg=beg,
@@ -311,12 +436,10 @@ def train_graphEEGConvNet(n_classes,
                                           averageImages=averageImages,
                                           H=H,
                                           W=W)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_or_generate_images(filepath,
                                          beg=beg,
@@ -326,8 +449,7 @@ def train_graphEEGConvNet(n_classes,
                                          averageImages=averageImages,
                                          H=H,
                                          W=W)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
 
@@ -385,7 +507,7 @@ def train_graphEEGConvNet(n_classes,
         plt.show()
 
 
-def train_BiInputsEEGConvNet(n_classes,
+def train_BiInputsEEGConvNet(nClasses,
                              Colors=8,
                              Chans=22,
                              W=16,
@@ -393,6 +515,7 @@ def train_BiInputsEEGConvNet(n_classes,
                              beg=0,
                              end=4,
                              srate=250,
+                             dataSelect='4s',
                              batch_size=10,
                              epochs=500,
                              verbose=2,
@@ -401,7 +524,7 @@ def train_BiInputsEEGConvNet(n_classes,
                              restate=True,
                              prep=True,
                              mode='potential'):
-    Samples = (end - beg) * srate
+    Samples = math.ceil(end * srate - beg * srate)
     if prep:
         pp = '_pp'
     else:
@@ -412,7 +535,7 @@ def train_BiInputsEEGConvNet(n_classes,
     # export graph of the model_s
     tf.keras.utils.plot_model(model_s, 'rawEEGConvModel.png', show_shapes=True)
 
-    net_s = rawEEGConvNet(n_classes,
+    net_s = rawEEGConvNet(nClasses,
                           model_s,
                           Colors=Colors,
                           Chans=Chans,
@@ -436,26 +559,22 @@ def train_BiInputsEEGConvNet(n_classes,
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
     for i in range(1, 10):
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_or_gen_filterbank_data(filepath,
                                               beg=beg,
                                               end=end,
                                               srate=srate)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_or_gen_filterbank_data(filepath,
                                              beg=beg,
                                              end=end,
                                              srate=srate)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
 
@@ -495,7 +614,7 @@ def train_BiInputsEEGConvNet(n_classes,
                               'graphEEGConvModel.png',
                               show_shapes=True)
 
-    net_g = graphEEGConvNet(n_classes,
+    net_g = graphEEGConvNet(nClasses,
                             model_g,
                             Colors=Colors,
                             Samples=Samples,
@@ -510,8 +629,7 @@ def train_BiInputsEEGConvNet(n_classes,
 
     history = []
     for i in range(1, 10):
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_or_generate_images(filepath,
                                           beg=beg,
@@ -519,12 +637,10 @@ def train_BiInputsEEGConvNet(n_classes,
                                           srate=srate,
                                           mode=mode,
                                           averageImages=64)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_or_generate_images(filepath,
                                          beg=beg,
@@ -532,8 +648,7 @@ def train_BiInputsEEGConvNet(n_classes,
                                          srate=srate,
                                          mode=mode,
                                          averageImages=64)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
 
@@ -585,26 +700,22 @@ def train_BiInputsEEGConvNet(n_classes,
 
     history = []
     for i in range(1, 10):
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T' + pp + '.mat')
         x_train = load_or_gen_filterbank_data(filepath,
                                               beg=beg,
                                               end=end,
                                               srate=srate)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Train',
+        filepath = os.path.join('data', dataSelect, 'Train',
                                 'A0' + str(i) + 'T_label' + pp + '.mat')
         y_train = load_data(filepath)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E' + pp + '.mat')
         x_test = load_or_gen_filterbank_data(filepath,
                                              beg=beg,
                                              end=end,
                                              srate=srate)
-        filepath = os.path.join('data',
-                                str(end) + 's', 'Test',
+        filepath = os.path.join('data', dataSelect, 'Test',
                                 'A0' + str(i) + 'E_label' + pp + '.mat')
         y_test = load_data(filepath)
 
