@@ -27,7 +27,7 @@ def train_MB3DCNN(nClasses,
                   drawflag=False,
                   restate=True,
                   prep=False,
-                  mode='potential',
+                  mode='raw',
                   averageImages=1):
     Samples = math.ceil(end * srate - beg * srate)
     if prep:
@@ -389,7 +389,7 @@ def train_graphEEGConvNet(nClasses,
                           drawflag=False,
                           restate=True,
                           prep=True,
-                          mode='potential',
+                          mode='topography',
                           averageImages=1):
     Samples = math.ceil(end * srate - beg * srate) // averageImages
     if prep:

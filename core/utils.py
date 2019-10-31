@@ -105,6 +105,7 @@ def gen_images(locs,
                features,
                H,
                W,
+               mode='interpolation',
                normalize=True,
                augment=False,
                pca=False,
@@ -122,17 +123,19 @@ def gen_images(locs,
                       Features corresponding to each frequency band are concatenated.
         H           : int, Number of pixels in the output images height
         W           : int, Number of pixels in the output images width
+        mode        : str, Mode of generation, can be choose between 'interpolation' and 'raw', 
+                      if mode == 'raw', locs, H, W and edgeless will be invalid, default is 'interpolation'
         normalize   : bool, Flag for whether to normalize each band over all samples
         augment     : bool, Flag for generating augmented images
         pca         : bool, Flag for PCA based data augmentation
         stdmult     : float, Multiplier for std of added noise
         nComponents : int, Number of components in PCA to retain for augmentation
         edgeless    : bool, If True generates edgeless images by adding artificial channels
-                      at four corners of the image with value = 0 (default = False).
+                      at four corners of the image with value = 0, default is False.
         
     Output:
 
-        interp      : ndarray, Tensor of size [nSamples, H, W, nColors] containing generated images.
+        interp      : ndarray, Tensor with size of [nSamples, H, W, nColors] containing generated images.
     """
     feat_array_temp = features
     nChannels = feat_array_temp.shape[1]  # Number of electrodes
@@ -156,14 +159,22 @@ def gen_images(locs,
     nSamples = feat_array_temp.shape[0]
 
     # Interpolate the values
-    grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):W * 1j,
-                              min(locs[:, 1]):max(locs[:, 1]):H * 1j]
+    if mode == 'interpolation':
+        grid_x, grid_y = np.mgrid[min(locs[:, 0]):max(locs[:, 0]):W * 1j,
+                                  min(locs[:, 1]):max(locs[:, 1]):H * 1j]
     interp = []
     for c in range(nColors):
-        interp.append(np.zeros([nSamples, H, W]))
+        if mode == 'interpolation':
+            interp.append(np.zeros([nSamples, H, W]))
+        elif mode == 'raw':
+            interp.append(np.zeros([nSamples, 6, 7]))
+        else:
+            raise ValueError(
+                'gen_images: mode can only be one of \'interpolation\' and \'raw\''
+            )
 
     # Generate edgeless images
-    if edgeless:
+    if edgeless and mode == 'interpolation':
         min_x, min_y = np.min(locs, axis=0)
         max_x, max_y = np.max(locs, axis=0)
         locs = np.append(locs,
@@ -175,15 +186,27 @@ def gen_images(locs,
                                                  np.zeros((nSamples, 4)),
                                                  axis=1)
 
-    # Interpolating
+    # Generating
     for i in range(nSamples):
         for c in range(nColors):
-            interp[c][i, :, :] = griddata(locs,
-                                          feat_array_temp[i, :, c],
-                                          (grid_x, grid_y),
-                                          method='cubic',
-                                          fill_value=np.nan).T
-        print('Interpolating {0:0>4d}/{1:0>4d}\r'.format(i + 1, nSamples),
+            if mode == 'interpolation':
+                interp[c][i, :, :] = griddata(locs,
+                                              feat_array_temp[i, :, c],
+                                              (grid_x, grid_y),
+                                              method='cubic',
+                                              fill_value=np.nan).T
+            elif mode == 'raw':
+                interp[c][i, 0, 3:4] = feat_array_temp[i, 0:1, c]
+                interp[c][i, 1, 1:6] = feat_array_temp[i, 1:6, c]
+                interp[c][i, 2, 0:7] = feat_array_temp[i, 6:13, c]
+                interp[c][i, 3, 1:6] = feat_array_temp[i, 13:18, c]
+                interp[c][i, 4, 2:5] = feat_array_temp[i, 18:21, c]
+                interp[c][i, 5, 3:4] = feat_array_temp[i, 21:22, c]
+            else:
+                raise ValueError(
+                    'gen_images: mode can only be one of \'interpolation\' and \'raw\''
+                )
+        print('Generating {0:0>4d}/{1:0>4d}\r'.format(i + 1, nSamples),
               end='\r')
     print()
 
@@ -270,7 +293,7 @@ def load_or_generate_images(filepath,
                             beg=0,
                             end=4,
                             srate=250,
-                            mode='potentialMap',
+                            mode='raw',
                             averageImages=1,
                             H=30,
                             W=35):
@@ -284,7 +307,7 @@ def load_or_generate_images(filepath,
         beg             : num, second when imegery tasks begins, default is 0
         end             : num, second when imegery tasks ends, default is 4
         srate           : int, the sample rate of raw data, default is 250 
-        mode            : str, should be one of strings among 'potential', 'energy', and 'envelope', default is 'potential'
+        mode            : str, should be one of strings among 'raw', 'topography', 'energy', and 'envelope', default is 'raw'
         averageImages   : int, length of window to mix images in time dimension, like AveragePooling2D(1, averageImages), default is 1
         H               : int, 
         W               : int, 
@@ -307,10 +330,50 @@ def load_or_generate_images(filepath,
     for e in locs_3d:
         locs_2d.append(azim_proj(e))
 
-    if mode == 'potential':
-        if os.path.exists(filepath[:-4] + '_potential_' + str(H) + '_' +
+    if mode == 'raw':
+        if os.path.exists(filepath[:-4] + '_raw_' + str(averageImages) +
+                          '.mat'):
+            images_average = sio.loadmat(filepath[:-4] + '_raw_' +
+                                         str(averageImages) +
+                                         '.mat')['images_average']
+            print('Load images_average done!')
+        else:
+            print('Generating average images over time windows...')
+            feats = load_data(filepath, label=False)
+            # feats = bandpassfilter(feats)
+            feats = feats[:, :, :, np.newaxis]
+            images_average = []
+            for n in range(feats.shape[0]):
+                print('Generate trial {:0>3d}'.format(n + 1))
+                av_feats = []
+                for i in range(feats.shape[2] // averageImages):
+                    av_feats.append(
+                        np.average(feats[n, :, i * averageImages:(i + 1) *
+                                         averageImages, :],
+                                   axis=1))
+                images_average.append(
+                    gen_images(None,
+                               np.asarray(av_feats),
+                               None,
+                               None,
+                               mode='raw',
+                               normalize=False))
+            images_average = np.asarray(images_average)
+            sio.savemat(filepath[:-4] + '_raw_' + str(averageImages) + '.mat',
+                        {'images_average': images_average})
+            print()
+            print('Saving images_average done!')
+            del feats
+        images_average = images_average[:,
+                                        m.floor(beg *
+                                                srate):m.ceil(end *
+                                                              srate), :, :, :]
+        print('The shape of images_average.shape', images_average.shape)
+        pass
+    elif mode == 'topography':
+        if os.path.exists(filepath[:-4] + '_topography_' + str(H) + '_' +
                           str(W) + '_' + str(averageImages) + '.mat'):
-            images_average = sio.loadmat(filepath[:-4] + '_potential_' +
+            images_average = sio.loadmat(filepath[:-4] + '_topography_' +
                                          str(H) + '_' + str(W) + '_' +
                                          str(averageImages) +
                                          '.mat')['images_average']
@@ -322,7 +385,7 @@ def load_or_generate_images(filepath,
             #                                          end=end,
             #                                          srate=srate)
             feats = load_data(filepath, label=False)
-            feats = bandpassfilter(feats)
+            # feats = bandpassfilter(feats)
             feats = feats[:, :, :, np.newaxis]
             images_average = []
             for n in range(feats.shape[0]):
@@ -341,7 +404,7 @@ def load_or_generate_images(filepath,
                                normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
-                filepath[:-4] + '_potential_' + str(H) + '_' + str(W) + '_' +
+                filepath[:-4] + '_topography_' + str(H) + '_' + str(W) + '_' +
                 str(averageImages) + '.mat',
                 {'images_average': images_average})
             print()
@@ -384,8 +447,8 @@ def load_or_generate_images(filepath,
                                normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
-                filepath[:-4] + '_potential_' + str(H) + '_' + str(W) + '_' +
-                str(averageImages) + '.mat',
+                filepath[:-4] + '_energy_' + str(H) + '_' + str(W) +
+                '_' + str(averageImages) + '.mat',
                 {'images_average': images_average})
             print('Saving images_average done!')
             del feats
@@ -396,11 +459,11 @@ def load_or_generate_images(filepath,
         print('The shape of images_average.shape', images_average.shape)
         pass
     elif mode == 'envelope':
-        signal.hilbert(load_data(filepath), )
+        # signal.hilbert(load_data(filepath), )
         pass
     else:
         raise ValueError(
-            'load_or_generate_images: mode should be one of strings among \'potential\', \'energy\', and \'envelope\''
+            'load_or_generate_images: mode should be one of strings among \'raw\', \'topography\', \'energy\', and \'envelope\''
         )
         pass
     labels = load_data(filepath[:-4] + '_label.mat')

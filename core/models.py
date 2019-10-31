@@ -705,7 +705,7 @@ def MB3DCNN(nClasses, H, W, Samples):
     _add = Add()([_srf_output, _mrf_output, _lrf_output])
     _output = Activation('softmax', name='MB_Output')(_add)
     return Model(inputs=_input,
-                 outputs=[_output],
+                 outputs=[_srf_output],
                  name='MB3DCNN')
 
 

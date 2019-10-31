@@ -48,6 +48,6 @@ if __name__ == '__main__':
                   prep=False,
                   beg=0,
                   end=1.25,
-                  H=30,
-                  W=35)
+                  H=6,
+                  W=7)
     pass
