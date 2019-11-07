@@ -826,23 +826,8 @@ class crossValidate(object):
     '''
     Class for K-fold Cross Validation.
 
-    This class has implemented a magic function, for which it can be used like a function:
-    ```python
-    def func(*args, **kwargs, subject=None, data=None):
-        ...
-        return acc
+    This class has implemented a magic function, for which it can be used like a function.
 
-    def load_raw_data(filepath, label=False, *a, **kw):
-        ...
-        if label:
-            ...
-            return label
-        else:
-            ...
-            return data
-    ...
-    avg_acc = crossValidate(func, load_raw_data, K=10, subs=9, *a, **kw)(*args, **kwargs)
-    ```
     Parameters
     ----------
     ```txt
@@ -862,12 +847,35 @@ class crossValidate(object):
     *a, *args       : tuple, Parameters used by @dataFunc and @func respectively
     **kw, **kwargs  : dict, Parameters used by @dataFunc and @func respectively
     ```
+
     Returns
     -------
     ```txt
     avg_acc         : list, Average accuracy for each subject with K-fold Cross Validation, 
                       and total average accuracy in the last of list
     ```
+
+    Example
+    -------
+    ```python
+    def func(*args, **kwargs, subject=None, data=None):
+        ...
+        return acc
+
+    def load_raw_data(filepath, label=False, *a, **kw):
+        ...
+        if label:
+            ...
+            return label
+        else:
+            ...
+            return data
+    ...
+    avg_acc = crossValidate(func, load_raw_data, K=10, subs=9, *a, **kw)(*args, **kwargs)
+    ```
+
+    Note
+    ----
     More details to see the codes.
     '''
     def __init__(self,
