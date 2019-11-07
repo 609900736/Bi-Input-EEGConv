@@ -1,14 +1,18 @@
-#coding:utf-8
+# coding:utf-8
 """
 Model BIEEGConv
 
 @author: Boxann John
 @date: 2019/11/07
 """
-from core import models
-from core import train
-from core import utils
-from core import regularizers
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from .core import models
+from .core import train
+from .core import utils
+from .core import regularizers
 
 __all__ = {models, train, utils, regularizers}
 
