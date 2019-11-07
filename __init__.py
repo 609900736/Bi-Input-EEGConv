@@ -1,7 +1,15 @@
 #coding:utf-8
+"""
+Model BIEEGConv
 
-import core.models as models
-import core.train as train
-import core.utils as utils
+@author: Boxann John
+@date: 2019/11/07
+"""
+from core import models
+from core import train
+from core import utils
+from core import regularizers
 
-__version__ = '0.0.0'
+__all__ = {models, train, utils, regularizers}
+
+__version__ = '0.0.1-rc'

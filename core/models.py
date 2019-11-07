@@ -26,10 +26,10 @@ from tensorflow.python.keras.layers import Dense, \
 from tensorflow.python.keras.constraints import max_norm, \
                                                 min_max_norm, \
                                                 unit_norm
-from tensorflow.python.keras.regularizers import l1, \
-                                                 l2, \
-                                                 l1_l2
 from tensorflow.python.keras import backend as K
+
+from core.regularizers import l1, l2, l1_l2, l2_1, tl1, sgl, tsg
+
 K.set_image_data_format('channels_last')
 
 
@@ -59,7 +59,10 @@ def rawEEGConvModel(Chans,
                          'AlphaDropout or Dropout, passed as a string.')
     # Learn from raw EEG signals
     input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
-    s = Conv2D(F1, (1, kernLength), padding='same', use_bias=False)(input_s)
+    s = Conv2D(F1, (1, kernLength),
+               strides=(1, 4),
+               padding='same',
+               use_bias=False)(input_s)
     s = BatchNormalization(axis=-1)(s)
     s = DepthwiseConv2D((Chans, 1),
                         use_bias=False,
@@ -67,16 +70,16 @@ def rawEEGConvModel(Chans,
                         depthwise_constraint=max_norm(1.))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
-    s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
     s = SeparableConv2D(F2, (1, 16),
+                        strides=(1, 8),
                         padding='same',
                         use_bias=False,
                         depthwise_constraint=max_norm(1.),
-                        pointwise_regularizer=l1_l2(0.01, 0.01))(s)
+                        pointwise_regularizer=l1_l2(0.01, 0.01),
+                        depthwise_regularizer=sgl(0.01, 0.01))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
-    s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
 
@@ -704,9 +707,14 @@ def MB3DCNN(nClasses, H, W, Samples):
 
     _add = Add()([_srf_output, _mrf_output, _lrf_output])
     _output = Activation('softmax', name='MB_Output')(_add)
-    return Model(inputs=_input,
-                 outputs=[_srf_output],
-                 name='MB3DCNN')
+    model = Model(inputs=_input, outputs=[_srf_output], name='MB3DCNN')
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.summary()
+    # export graph of the model
+    tf.keras.utils.plot_model(model, 'MB3DCNN.png', show_shapes=True)
+    return model
 
 
 if __name__ == '__main__':

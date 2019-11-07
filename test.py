@@ -46,6 +46,6 @@ if __name__ == '__main__':
         #model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
         #          loss=tf.keras.losses.sparse_categorical_crossentropy,
         #          metrics=['accuracy'])
-        model.evaluate(x_test, y_test, batch_size=10, verbose=2)
-
+        loss, acc = model.evaluate(x_test, y_test, batch_size=10, verbose=2)
+        print('%.4f\n%.4f'%(loss, acc))
     pass

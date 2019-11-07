@@ -6,9 +6,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from core.utils import load_data, filterbank
-from core.models import EEGNet
-from core.train import train_EEGNet, train_rawEEGConvNet, train_graphEEGConvNet, train_MB3DCNN
+from core.train import train_EEGNet, train_rawEEGConvNet, train_graphEEGConvNet, train_MB3DCNN, crossValidate, test
 from tensorflow.python.keras import backend as K
 
 srate = 250
@@ -16,6 +14,7 @@ srate = 250
 #                                               intra_op_parallelism_threads=10,
 #                                               inter_op_parallelism_threads=2)))
 K.set_image_data_format('channels_last')
+tf.enable_eager_execution()
 
 if __name__ == '__main__':
     # train_EEGNet(4,
@@ -41,13 +40,20 @@ if __name__ == '__main__':
     #                       end=4,
     #                       H=12,
     #                       W=14)
-    train_MB3DCNN(4,
-                  srate=srate,
-                  epochs=300,
-                  patience=100,
-                  prep=False,
-                  beg=0,
-                  end=1.25,
-                  H=6,
-                  W=7)
+    # train_MB3DCNN(4,
+    #               srate=srate,
+    #               epochs=300,
+    #               patience=100,
+    #               prep=False,
+    #               beg=0,
+    #               end=1.25,
+    #               H=6,
+    #               W=7)
+    crossValidate(train_EEGNet, K=10)(4,
+                                      srate=srate,
+                                      epochs=300,
+                                      patience=100,
+                                      prep=False,
+                                      beg=0,
+                                      end=4)
     pass

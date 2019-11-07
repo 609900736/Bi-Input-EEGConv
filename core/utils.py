@@ -73,8 +73,8 @@ def azim_proj(pos):
 def load_data(datafile, label=True):
     """
     Loads the data from MAT file. MAT file would be two kinds.
-    'data.mat' which contains the feature matrix in the shape
-    of [nTrials, nChannels, nSamples] and 'label.mat' which
+    `'data.mat'` which contains the feature matrix in the shape
+    of `[nTrials, nChannels, nSamples]` and `'label.mat'` which
     contains the output labels as a vector. Label numbers are
     assumed to start from 0.
 
@@ -696,7 +696,7 @@ def highpassfilter(data, Wn=4, srate=250):
     return np.asarray(new_data)
 
 
-def bandpassfilter(data, Wn=[4, 100], srate=250):
+def bandpassfilter(data, Wn=[.5, 100], srate=250):
     b, a = signal.butter(4, Wn=Wn, btype='bandpass', fs=srate)
     new_data = []
     for e in data:
