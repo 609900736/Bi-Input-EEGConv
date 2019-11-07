@@ -72,29 +72,35 @@ def azim_proj(pos):
 
 def load_data(datafile, label=True):
     """
-    Loads the data from MAT file. MAT file would be two kinds.
-    `'data.mat'` which contains the feature matrix in the shape
-    of `[nTrials, nChannels, nSamples]` and `'label.mat'` which
-    contains the output labels as a vector. Label numbers are
-    assumed to start from 0.
+    Loads the data from MAT file. 
+    
+    MAT file would be two kinds. `'*.mat'` which contains the feature 
+    matrix in the shape of `[nTrials, nChannels, nSamples]` and 
+    `'*_label.mat'` which contains the output labels as a vector. 
+    Label numbers are assumed to start from 0.
 
-    Input:
-
-        datafile        : str, load data or label from .mat file
-        label           : bool, if True: load label, else: load data
-
-    Output:
-
-        data or label   : ndarray
+    Parameters
+    ----------
+    ```txt
+    datafile        : str, load data or label from *.mat file (* in '*.mat' 
+                      and '*_label.mat' are the same, pls let datafile = '*.mat')
+    label           : bool, if True: load label, else: load data
+    ```
+    Returns
+    -------
+    ```txt
+    data or label   : ndarray
+    ```
     """
     print("Loading data from %s" % (datafile))
-    dataMat = sio.loadmat(datafile, mat_dtype=True)
     if label:
+        dataMat = sio.loadmat(datafile[:-4] + '_label.mat', mat_dtype=True)
         print("Data loading complete. Shape is %r" %
               (dataMat['classlabel'].shape, ))
         # Class labels should start from 0
         return dataMat['classlabel'] - 1
     else:  # [nChannels, nSamples, nTrials]
+        dataMat = sio.loadmat(datafile, mat_dtype=True)
         dataMat['s'] = dataMat['s'].swapaxes(1, 2)
         dataMat['s'] = dataMat['s'].swapaxes(0, 1)
         print("Data loading complete. Shape is %r" % (dataMat['s'].shape, ))
@@ -447,8 +453,8 @@ def load_or_generate_images(filepath,
                                normalize=False))
             images_average = np.asarray(images_average)
             sio.savemat(
-                filepath[:-4] + '_energy_' + str(H) + '_' + str(W) +
-                '_' + str(averageImages) + '.mat',
+                filepath[:-4] + '_energy_' + str(H) + '_' + str(W) + '_' +
+                str(averageImages) + '.mat',
                 {'images_average': images_average})
             print('Saving images_average done!')
             del feats

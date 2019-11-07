@@ -14,6 +14,7 @@ from .core import train
 from .core import utils
 from .core import regularizers
 
+__name__ = 'BIEEGConv'
 __all__ = {models, train, utils, regularizers}
 
 __version__ = '0.0.1-rc'

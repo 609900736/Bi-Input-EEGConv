@@ -830,95 +830,175 @@ class crossValidate(object):
     ```python
     def func(*args, **kwargs, subject=None, data=None):
         ...
-        return data, acc
+        return acc
+
+    def load_raw_data(filepath, label=False, *a, **kw):
+        ...
+        if label:
+            ...
+            return label
+        else:
+            ...
+            return data
     ...
-    avg_acc = crossValidate(func, K=10, num=9)(*args, **kwargs)
+    avg_acc = crossValidate(func, load_raw_data, K=10, subs=9, *a, **kw)(*args, **kwargs)
     ```
-    Input:
+    Parameters
+    ----------
     ```txt
-    func        : function, Function needs to do cross validation.
-    splitFunc   : function, Support class from sklearn.model_selection.
-    kFold       : int, Number of K-fold.
-    shuffle     : bool, optional Whether to shuffle each class's samples before 
-                  splitting into batches.
-    random_state: int, RandomState instance or None, optional, default = None. If int, 
-                  random_state is the seed used by the random number generator; If 
-                  RandomState instance, random_state is the random number generator; 
-                  If None, the random number generator is the RandomState instance 
-                  used by np.random. Used when shuffle == True.
-    num         : int, Number of subjects.
+    func            : function, Models needs to do cross validation.
+    dataFunc        : function, Generate data for @func, shape (n_trails, ...). 
+                      It should discriminate data and label.
+    splitMethod     : class, Supports KFold etc. from module sklearn.model_selection.
+    kFold           : int, Number of K-fold.
+    shuffle         : bool, Optional Whether to shuffle each class's samples before 
+                      splitting into batches, default = False.
+    random_state    : int, RandomState instance or None, optional, default = None. 
+                      If int, random_state is the seed used by the random number 
+                      generator; If RandomState instance, random_state is the random 
+                      number generator; If None, the random number generator is the 
+                      RandomState instance used by np.random. Used when shuffle == True.
+    subs            : int, Number of subjects.
+    *a, *args       : tuple, Parameters used by @dataFunc and @func respectively
+    **kw, **kwargs  : dict, Parameters used by @dataFunc and @func respectively
     ```
-    Output:
+    Returns
+    -------
     ```txt
-    avg_acc     : list, Average accuracy for each subject with K-fold Cross Validation, 
-                  and total average accuracy in the last of list
+    avg_acc         : list, Average accuracy for each subject with K-fold Cross Validation, 
+                      and total average accuracy in the last of list
     ```
     More details to see the codes.
     '''
     def __init__(self,
                  func,
-                 splitFunc=StratifiedKFold,
+                 dataFunc,
+                 splitMethod=StratifiedKFold,
                  kFold=10,
                  shuffle=False,
                  random_state=None,
-                 num=9):
+                 subs=9,
+                 *args,
+                 **kwargs):
         self.func = func
-        self.splitFunc = splitFunc
+        self.dataFunc = dataFunc
+        self.splitMethod = splitMethod
         self.kFold = kFold
         self.shuffle = shuffle
         self.random_state = random_state
-        self.num = num + 1
+        self.subs = subs + 1
+        self.args = args
+        self.kwargs = kwargs
 
     def __call__(self, *args, **kwargs):
         avg_acc = []
-        for i in range(1, self.num):
-            data = None
+        for i in range(1, self.subs):
             accik = []
-            for k in range(self.kFold):
-                data, acc = self.func(*args, **kwargs, subject=i, data=data)
+            for data in self._read_data(data, i):
+                acc = self.func(*args, **kwargs, subject=i, data=data)
                 accik.append(acc)
             avg_acc.append(np.average(np.asarray(accik)))
             del data
         total_avg_acc = np.average(np.asarray(avg_acc))
         print('{:d}-fold Cross Validation Accuracy'.format(self.kFold))
-        for i in range(1, self.num):
+        for i in range(1, self.subs):
             print('Subject {0:0>2d}: {1:.2%}'.format(i, avg_acc[i - 1]))
         print('Average   : {:.2%}'.format(total_avg_acc))
         avg_acc.append(total_avg_acc)
         return avg_acc
 
     def getConfig(self):
-        print('Method: {0:s}\nCross Validation Fold: {1:d}'.format(
-            self.func.__name__, self.kFold))
+        print(
+            'Method: {0:s}\nSplit Method: {1:s}\nCross Validation Fold: {2:d}\n'
+            'shuffle: {3}\nrandom_state: {4:d}\nNumber of subjects: {5:d}'.
+            format(self.func.__name__, self.splitMethod.__name__, self.kFold,
+                   self.shuffle, self.random_state, self.subs))
 
     def setConfig(self,
                   func,
-                  splitFunc=StratifiedKFold,
+                  dataFunc,
+                  splitMethod=StratifiedKFold,
                   kFold=10,
                   shuffle=False,
                   random_state=None,
-                  num=9):
+                  subs=9,
+                  *args,
+                  **kwargs):
         self.func = func
-        self.splitFunc = splitFunc
+        self.dataFunc = dataFunc
+        self.splitMethod = splitMethod
         self.kFold = kFold
         self.shuffle = shuffle
         self.random_state = random_state
-        self.num = num + 1
+        self.subs = subs + 1
+        self.args = args
+        self.kwargs = kwargs
 
-    def _read_data(self, filepath):
-        
-        pass
+    def _read_data(self, data, subject):
+        data = {
+            'x_train': None,
+            'x_val': None,
+            'x_test': None,
+            'y_train': None,
+            'y_val': None,
+            'y_test': None
+        }
+        filepath = os.path.join('data', '4s', 'Test',
+                                'A0' + str(subject) + 'E.mat')
+        data['x_test'] = self.dataFunc(filepath,
+                                       label=False,
+                                       *self.args,
+                                       **self.kwargs)
+        data['y_test'] = self.dataFunc(filepath,
+                                       label=True,
+                                       *self.args,
+                                       **self.kwargs)
+        filepath = os.path.join('data', '4s', 'Train',
+                                'A0' + str(subject) + 'T.mat')
+        for (data['x_train'],
+             data['y_train']), (data['x_val'], data['y_val']) in self._spilt(
+                 self.dataFunc(filepath,
+                               label=False,
+                               *self.args,
+                               **self.kwargs),
+                 self.dataFunc(filepath, label=True, *self.args,
+                               **self.kwargs)):
+            yield data
 
-    def _spilt(self, X, y):
-        skf = self.splitFunc(n_splits=self.kFold,
-                             shuffle=self.shuffle,
-                             random_state=self.random_state)
-        for train_index, test_index in skf.split(X, y):
-            # (x_train, y_train), (x_test, y_test)
-            yield (X[train_index], y[train_index]), (X[test_index],
-                                                     y[test_index])
+    def _spilt(self, X, y, groups=None):
+        """
+        Generate indices to split data into training and test set.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            Training data, where n_samples is the number of samples
+            and n_features is the number of features.
+
+        y : array-like, shape (n_samples,)
+            The target variable for supervised learning problems.
+
+        groups : array-like, with shape (n_samples,), optional
+            Group labels for the samples used while splitting the dataset into
+            train/test set.
+
+        Yields
+        ------
+        train : ndarray
+            The training set indices for that split.
+
+        val : ndarray
+            The validating set indices for that split.
+        """
+        sm = self.splitMethod(n_splits=self.kFold,
+                              shuffle=self.shuffle,
+                              random_state=self.random_state)
+        for train_index, val_index in sm.split(X, y, groups):
+            # (x_train, y_train), (x_val, y_val)
+            yield (X[train_index], y[train_index]), (X[val_index],
+                                                     y[val_index])
 
 
 def test(*args, **kwargs):
     print(args, kwargs)
-    return None, 1.
+    return 1.
