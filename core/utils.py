@@ -14,19 +14,22 @@ from sklearn.preprocessing import scale
 
 
 def cart2sph(x, y, z):
-    """
+    '''
     Transform Cartesian coordinates to spherical
 
-    Input:
-
-        x: float, X coordinate
-        y: float, Y coordinate
-        z: float, Z coordinate
-
-    Output:
-
-        radius, elevation, azimuth: float -> tuple, Transformed polar coordinates
-    """
+    Parameters
+    ----------
+    ```txt
+    x: float, X coordinate
+    y: float, Y coordinate
+    z: float, Z coordinate
+    ```
+    Returns
+    -------
+    ```txt
+    radius, elevation, azimuth: float -> tuple, Transformed polar coordinates
+    ```
+    '''
     x2_y2 = x**2 + y**2
     r = m.sqrt(x2_y2 + z**2)  # r
     elev = m.atan2(z, m.sqrt(x2_y2))  # Elevation
@@ -35,43 +38,49 @@ def cart2sph(x, y, z):
 
 
 def pol2cart(theta, rho):
-    """
+    '''
     Transform polar coordinates to Cartesian
 
-    Input:
-   
-        theta   : float, angle value
-        rho     : float, radius value
-    
-    Output:
-
-        X, Y    : float -> tuple, projected coordinates
-    """
+    Parameters
+    ----------
+    ```txt
+    theta   : float, angle value
+    rho     : float, radius value
+    ```
+    Returns
+    -------
+    ```txt
+    X, Y    : float -> tuple, projected coordinates
+    ```
+    '''
     return rho * m.cos(theta), rho * m.sin(theta)
 
 
 def azim_proj(pos):
-    """
+    '''
     Computes the Azimuthal Equidistant Projection of input point in
     3D Cartesian Coordinates. Imagine a plane being placed against
     (tangent to) a globe. If a light source inside the globe projects
     the graticule onto the plane the result would be a planar, or
     azimuthal, map projection.
 
-    Input:
-        
-        pos     : list or tuple, position in 3D Cartesian coordinates [x, y, z]
-        
-    Output:
-
-        X, Y    : float -> tuple, projected coordinates using Azimuthal Equidistant Projection
-    """
+    Parameters
+    ----------
+    ```txt
+    pos     : list or tuple, position in 3D Cartesian coordinates [x, y, z]
+    ```
+    Returns
+    -------
+    ```txt
+    X, Y    : float -> tuple, projected coordinates using Azimuthal Equidistant Projection
+    ```
+    '''
     [r, elev, az] = cart2sph(pos[0], pos[1], pos[2])
     return pol2cart(az, m.pi / 2 - elev)
 
 
 def load_data(datafile, label=True):
-    """
+    '''
     Loads the data from MAT file. 
     
     MAT file would be two kinds. `'*.mat'` which contains the feature 
@@ -91,11 +100,11 @@ def load_data(datafile, label=True):
     ```txt
     data or label   : ndarray
     ```
-    """
-    print("Loading data from %s" % (datafile))
+    '''
+    print('Loading data from %s' % (datafile))
     if label:
         dataMat = sio.loadmat(datafile[:-4] + '_label.mat', mat_dtype=True)
-        print("Data loading complete. Shape is %r" %
+        print('Data loading complete. Shape is %r' %
               (dataMat['classlabel'].shape, ))
         # Class labels should start from 0
         return dataMat['classlabel'] - 1
@@ -103,7 +112,7 @@ def load_data(datafile, label=True):
         dataMat = sio.loadmat(datafile, mat_dtype=True)
         dataMat['s'] = dataMat['s'].swapaxes(1, 2)
         dataMat['s'] = dataMat['s'].swapaxes(0, 1)
-        print("Data loading complete. Shape is %r" % (dataMat['s'].shape, ))
+        print('Data loading complete. Shape is %r' % (dataMat['s'].shape, ))
         return dataMat['s']  # [nTrials, nChannels, nSamples]
 
 
@@ -118,31 +127,34 @@ def gen_images(locs,
                stdmult=0.1,
                nComponents=2,
                edgeless=False):
-    """
+    '''
     Generates EEG images given electrode locations in 2D space and multiple feature values for each electrode
 
-    Input:
-
-        locs        : ndarray, An array with shape [nChannels, 2] containing X, Y coordinates
-                      for each electrode.
-        features    : ndarray, Feature matrix as [nSamples, nChannels, nColors] Features are as columns.
-                      Features corresponding to each frequency band are concatenated.
-        H           : int, Number of pixels in the output images height
-        W           : int, Number of pixels in the output images width
-        mode        : str, Mode of generation, can be choose between 'interpolation' and 'raw', 
-                      if mode == 'raw', locs, H, W and edgeless will be invalid, default is 'interpolation'
-        normalize   : bool, Flag for whether to normalize each band over all samples
-        augment     : bool, Flag for generating augmented images
-        pca         : bool, Flag for PCA based data augmentation
-        stdmult     : float, Multiplier for std of added noise
-        nComponents : int, Number of components in PCA to retain for augmentation
-        edgeless    : bool, If True generates edgeless images by adding artificial channels
-                      at four corners of the image with value = 0, default is False.
-        
-    Output:
-
-        interp      : ndarray, Tensor with size of [nSamples, H, W, nColors] containing generated images.
-    """
+    Parameters
+    ----------
+    ```txt
+    locs        : ndarray, An array with shape (nChannels, 2) containing X, Y coordinates
+                  for each electrode.
+    features    : ndarray, Feature matrix shapes (nSamples, nChannels, nColors) Features are as columns.
+                  Features corresponding to each frequency band are concatenated.
+    H           : int, Number of pixels in the output images height
+    W           : int, Number of pixels in the output images width
+    mode        : str, Mode of generation, can be choose between 'interpolation' and 'raw', 
+                  if mode == 'raw', locs, H, W and edgeless will be invalid, default is 'interpolation'
+    normalize   : bool, Flag for whether to normalize each band over all samples
+    augment     : bool, Flag for generating augmented images
+    pca         : bool, Flag for PCA based data augmentation
+    stdmult     : float, Multiplier for std of added noise
+    nComponents : int, Number of components in PCA to retain for augmentation
+    edgeless    : bool, If True generates edgeless images by adding artificial channels
+                  at four corners of the image with value = 0, default is False.
+    ```
+    Returns
+    -------
+    ```txt
+    interp      : ndarray, Tensor with shape (nSamples, H, W, nColors) containing generated images.
+    ```
+    '''
     feat_array_temp = features
     nChannels = feat_array_temp.shape[1]  # Number of electrodes
     nColors = feat_array_temp.shape[2]
@@ -233,20 +245,23 @@ def gen_images(locs,
 
 
 def augment_EEG(data, stdmult, pca=False, nComponents=2):
-    """
+    '''
     Augment data by adding normal noise to each feature.
 
-    Input:
-
-        data        : EEG feature data as a matrix (nSamples, nFeatures)
-        stdmult     : Multiplier for std of added noise
-        pca         : if True will perform PCA on data and add noise proportional to PCA components.
-        nComponents : Number of components to consider when using PCA.
-
-    Output:
-
-        augData     : Augmented data as a matrix (nSamples, nFSeatures)
-    """
+    Parameters
+    ----------
+    ```txt
+    data        : EEG feature data as a matrix (nSamples, nFeatures)
+    stdmult     : Multiplier for std of added noise
+    pca         : if True will perform PCA on data and add noise proportional to PCA components.
+    nComponents : Number of components to consider when using PCA.
+    ```
+    Returns
+    -------
+    ```txt
+    augData     : Augmented data as a matrix (nSamples, nFSeatures)
+    ```
+    '''
     augData = np.zeros(data.shape)
     if pca:
         pca = PCA(nComponents=nComponents)
@@ -267,10 +282,10 @@ def augment_EEG(data, stdmult, pca=False, nComponents=2):
 
 
 def reformatInput(data, labels, indices):
-    """
+    '''
     Receives the the indices for train and test datasets.
     Outputs the train, validation, and test data and label datasets.
-    """
+    '''
 
     trainIndices = indices[0][len(indices[1]):]
     validIndices = indices[0][:len(indices[1])]
@@ -303,31 +318,33 @@ def load_or_generate_images(filepath,
                             averageImages=1,
                             H=30,
                             W=35):
-    """
+    '''
     Generates EEG images
 
-    Input:
-
-        filepath        : str, path of images data file
-        locspath        : str, path of locations data file, default is None
-        beg             : num, second when imegery tasks begins, default is 0
-        end             : num, second when imegery tasks ends, default is 4
-        srate           : int, the sample rate of raw data, default is 250 
-        mode            : str, should be one of strings among 'raw', 'topography', 'energy', and 'envelope', default is 'raw'
-        averageImages   : int, length of window to mix images in time dimension, like AveragePooling2D(1, averageImages), default is 1
-        H               : int, 
-        W               : int, 
-
-    Output:
-
-        imagesData      : ndarray, Tensor of size [nTrials, nSamples, H, W, nColors] containing generated images
-
-    *********************************************************
-    
-        type num means int or float
-    """
+    Parameters
+    ----------
+    ```txt
+    filepath        : str, path of images data file
+    locspath        : str, path of locations data file, default is None
+    beg             : num, second when imegery tasks begins, default is 0
+    end             : num, second when imegery tasks ends, default is 4
+    srate           : int, the sample rate of raw data, default is 250 
+    mode            : str, should be one of strings among 'raw', 'topography', 'energy', and 'envelope', default is 'raw'
+    averageImages   : int, length of window to mix images in time dimension, like AveragePooling2D(1, averageImages), default is 1
+    H               : int, height of images
+    W               : int, width of images
+    ```
+    Returns
+    -------
+    ```txt
+    imagesData      : ndarray, Tensor of size [nTrials, nSamples, H, W, nColors] containing generated images
+    ```
+    Note
+    ----
+    type num means int or float
+    '''
     if locspath is None:
-        locspath = 'data/22scan_locs.mat'
+        locspath = os.path.join('data', '22scan_locs.mat')
     print('-' * 100)
     print('Loading data...')
     locs_3d = load_locs(locspath)
@@ -346,7 +363,7 @@ def load_or_generate_images(filepath,
         else:
             print('Generating average images over time windows...')
             feats = load_data(filepath, label=False)
-            # feats = bandpassfilter(feats)
+            feats = bandpassfilter(feats, srate=srate)
             feats = feats[:, :, :, np.newaxis]
             images_average = []
             for n in range(feats.shape[0]):
@@ -391,7 +408,7 @@ def load_or_generate_images(filepath,
             #                                          end=end,
             #                                          srate=srate)
             feats = load_data(filepath, label=False)
-            # feats = bandpassfilter(feats)
+            feats = bandpassfilter(feats, srate=srate)
             feats = feats[:, :, :, np.newaxis]
             images_average = []
             for n in range(feats.shape[0]):
@@ -480,18 +497,21 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
     '''
     Process raw data with filter-bank.
 
-    Input:
-
-        data    : ndarray, raw data, shapes as [nTrials, nChannels, nSamples]
-        srate   : int, the sample rate of raw data, default is 250
-        start   : int, frequency where the filter-bank begins, default is 4
-        stop    : int, frequency where the filter-bank ends, default is 38
-        window  : int, the bandwidth of one filter in the filter-bank, default is 4
-        step    : int, the interval of each neighbouring filter in the filter-bank, default is 2
-
-    Output:
-
-        FBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, nColors]
+    Parameters
+    ----------
+    ```txt
+    data    : ndarray, raw data, shapes as [nTrials, nChannels, nSamples]
+    srate   : int, the sample rate of raw data, default is 250
+    start   : int, frequency where the filter-bank begins, default is 4
+    stop    : int, frequency where the filter-bank ends, default is 38
+    window  : int, the bandwidth of one filter in the filter-bank, default is 4
+    step    : int, the interval of each neighbouring filter in the filter-bank, default is 2
+    ```
+    Returns
+    -------
+    ```txt
+    FBdata  : ndarray, data after filter-bank, shapes (nTrials, nChannels, nSamples, nColors)
+    ```
     '''
     nTrials, nChannels, nSamples = data.shape
     FBdata = []
@@ -503,7 +523,7 @@ def filterbank(data, srate=250, start=4, stop=38, window=4, step=2):
     FBdata = np.swapaxes(np.array(FBdata), 0, 1)
     FBdata = np.swapaxes(FBdata, 1, 2)
     FBdata = np.swapaxes(FBdata, 2, 3)
-    print("Data filterbank complete. Shape is %r." % (FBdata.shape, ))
+    print('Data filterbank complete. Shape is %r.' % (FBdata.shape, ))
     return FBdata
 
 
@@ -518,24 +538,26 @@ def load_or_gen_filterbank_data(filepath,
     '''
     load or generate data with filter-bank.
 
-    Input:
-
-        filepath: str, path of raw data file, and data shape is [nTrials, nChannels, nSamples]
-        beg     : num, second when imegery tasks begins
-        end     : num, second when imegery tasks ends
-        srate   : int, the sample rate of raw data, default is 250
-        start   : int, frequency where the filter-bank begins, default is 4
-        stop    : int, frequency where the filter-bank ends, default is 38
-        window  : int, the bandwidth of one filter in the filter-bank, default is 4
-        step    : int, the interval of each neighbouring filter in the filter-bank, default is 2
-
-    Output:
-    
-        FBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, nColors]
-
-    *********************************************************
-    
-        type num means int or float
+    Parameters
+    ----------
+    ```txt
+    filepath: str, path of raw data file, and data shape is [nTrials, nChannels, nSamples]
+    beg     : num, second when imegery tasks begins
+    end     : num, second when imegery tasks ends
+    srate   : int, the sample rate of raw data, default is 250
+    start   : int, frequency where the filter-bank begins, default is 4
+    stop    : int, frequency where the filter-bank ends, default is 38
+    window  : int, the bandwidth of one filter in the filter-bank, default is 4
+    step    : int, the interval of each neighbouring filter in the filter-bank, default is 2
+    ```
+    Returns
+    -------
+    ```txt
+    FBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, nColors]
+    ```
+    Note
+    ----
+    type num means int or float
     '''
     if os.path.exists(filepath[:-4] + '_fb.mat'):
         print('Loading data from %s' % (filepath[:-4] + '_fb.mat'))
@@ -561,13 +583,16 @@ def load_locs(filepath=None):
     '''
     load data of electrodesr' 3D location.
 
-    Input:
-
-        filepath: str, path of electrodes' 3D location data file, default is None
-
-    Output:
-
-        locs    : ndarray, data of electrodes' 3D location, shapes as [nChannels, 3]
+    Parameters
+    ----------
+    ```txt
+    filepath: str, path of electrodes' 3D location data file, default is None
+    ```
+    Returns
+    -------
+    ```txt
+    locs    : ndarray, data of electrodes' 3D location, shapes (nChannels, 3)
+    ```
     '''
     if filepath is None:
         filepath = os.path.join('data', '22scan_locs.mat')
@@ -584,14 +609,17 @@ def interestingband(data, srate=250):
     low gamma: 30-50Hz
     high gamma: 71-91Hz
 
-    Input:
-
-        data    : ndarray, raw data, shapes as [nTrials, nChannels, nSamples]
-        srate   : int, the sample rate of raw data, default is 250
-
-    Output:
-
-        IBdata  : ndarray, data after filter-bank, shapes as [nTrials, nChannels, nSamples, nColors]
+    Parameters
+    ----------
+    ```txt
+    data    : ndarray, raw data, shapes (nTrials, nChannels, nSamples)
+    srate   : int, the sample rate of raw data, default is 250
+    ```
+    Returns
+    -------
+    ```txt
+    IBdata  : ndarray, data after filter-bank, shapes (nTrials, nChannels, nSamples, nColors)
+    ```
     '''
     eps = 1e-9
     IBdata = []
@@ -654,7 +682,7 @@ def interestingband(data, srate=250):
     IBdata = np.swapaxes(np.array(IBdata), 0, 1)
     IBdata = np.swapaxes(IBdata, 1, 2)
     IBdata = np.swapaxes(IBdata, 2, 3)
-    print("Data filterbank complete. Shape is %r." % (IBdata.shape, ))
+    print('Data filterbank complete. Shape is %r.' % (IBdata.shape, ))
     return IBdata
 
 
@@ -662,20 +690,22 @@ def load_or_gen_interestingband_data(filepath, beg=0, end=4, srate=250):
     '''
     load or generate data with interesting-band filters.
 
-    Input:
-
-        filepath: str, path of raw data file, and data shape is [nTrials, nChannels, nSamples]
-        beg     : num, second when imegery tasks begins
-        end     : num, second when imegery tasks ends
-        srate   : int, the sample rate of raw data, default is 250
-
-    Output:
-
-        IBdata  : ndarray, data after interesting-band filters, shapes as [nTrials, nChannels, nSamples, nColors]
-
-    *********************************************************
-
-        type num means int or float
+    Parameters
+    ----------
+    ```txt
+    filepath: str, path of raw data file, and data shapes (nTrials, nChannels, nSamples)
+    beg     : num, second when imegery tasks begins
+    end     : num, second when imegery tasks ends
+    srate   : int, the sample rate of raw data, default is 250
+    ```
+    Returns
+    -------
+    ```txt
+    IBdata  : ndarray, data after interesting-band filters, shapes (nTrials, nChannels, nSamples, nColors)
+    ```
+    Note
+    ----
+    type num means int or float
     '''
     if os.path.exists(filepath[:-4] + '_ib.mat'):
         print('Loading data from %s' % (filepath[:-4] + '_ib.mat'))

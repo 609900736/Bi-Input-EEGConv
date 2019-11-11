@@ -16,64 +16,20 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold, GridSearch
 
 
 def train_MB3DCNN(nClasses,
-                  subject,
                   H,
                   W,
-                  beg=0,
-                  end=4,
-                  srate=250,
-                  dataSelect='4s',
+                  Samples,
                   batch_size=10,
                   epochs=500,
                   verbose=2,
                   patience=100,
-                  drawflag=False,
-                  prep=False,
                   mode='raw',
                   averageImages=1,
+                  subject=None,
                   data=None):
-    Samples = math.ceil(end * srate - beg * srate)
-    if prep:
-        pp = '_pp'
-    else:
-        pp = ''
-
     tm = time.localtime()
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
-    if data is None:
-        data = {
-            'x_train': None,
-            'x_test': None,
-            'y_train': None,
-            'y_test': None
-        }
-        filepath = os.path.join('data', dataSelect, 'Train',
-                                'A0' + str(subject) + 'T' + pp + '.mat')
-        data['x_train'] = load_or_generate_images(filepath,
-                                                  beg=beg,
-                                                  end=end,
-                                                  srate=srate,
-                                                  mode=mode,
-                                                  averageImages=averageImages,
-                                                  H=H,
-                                                  W=W)
-        filepath = os.path.join('data', dataSelect, 'Train',
-                                'A0' + str(subject) + 'T_label' + pp + '.mat')
-        data['y_train'] = load_data(filepath)
-        filepath = os.path.join('data', dataSelect, 'Test',
-                                'A0' + str(subject) + 'E' + pp + '.mat')
-        data['x_test'] = load_or_generate_images(filepath,
-                                                 beg=beg,
-                                                 end=end,
-                                                 srate=srate,
-                                                 mode=mode,
-                                                 averageImages=averageImages,
-                                                 H=H,
-                                                 W=W)
-        filepath = os.path.join('data', dataSelect, 'Test',
-                                'A0' + str(subject) + 'E_label' + pp + '.mat')
-        data['y_test'] = load_data(filepath)
 
     filepath = os.path.join(
         'model',
@@ -93,31 +49,22 @@ def train_MB3DCNN(nClasses,
                                   verbose=0,
                                   mode='auto')
 
-    # model = MB3DCNN(nClasses, H=H, W=W, Samples=Samples)
-    model = KerasClassifier(built_fn=MB3DCNN,
-                            nClasses=nClasses,
-                            H=H,
-                            W=W,
-                            Samples=Samples)
-    kfold = StratifiedKFold(n_splits=10)
-    results = cross_val_score(
-        model,
-        data['x_train'], [data['y_train']],
-        cv=kfold,
-        fit_params=dict(batch_size=batch_size,
+    model = MB3DCNN(nClasses, H=H, W=W, Samples=Samples)
+    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.summary()
+    # export graph of the model
+    tf.keras.utils.plot_model(model, 'MB3DCNN.png', show_shapes=True)
+
+    history = model.fit(x=data['x_train'],
+                        y=[data['y_train']],
+                        batch_size=batch_size,
                         epochs=epochs,
                         callbacks=[checkpointer, earlystopping],
                         verbose=verbose,
-                        validation_data=[data['x_test'], [data['y_test']]]))
-
-    # history = model.fit(x=data['x_train'],
-    #                     y=[data['y_train']],
-    #                     batch_size=batch_size,
-    #                     epochs=epochs,
-    #                     callbacks=[checkpointer, earlystopping],
-    #                     verbose=verbose,
-    #                     validation_data=[data['x_test'],
-    #                                      [data['y_test']]]).history
+                        validation_data=[data['x_val'],
+                                         [data['y_val']]]).history
 
     model = load_model(filepath)
     loss, acc = model.evaluate(data['x_test'], [data['y_test']],
@@ -130,30 +77,9 @@ def train_MB3DCNN(nClasses,
         str(tm.tm_hour) + '_' + str(tm.tm_min) + '_' + str(tm.tm_sec) +
         '_MB3DCNN.npy')
     np.save(filepath, history)
-    #history = np.load(filepath,allow_pickle=True)
-    if drawflag:
-        for i in range(1, 10):
-            # Plot training & validation accuracy values
-            plt.figure(2 * i - 1)
-            plt.plot(history['acc'])
-            plt.plot(history['val_acc'])
-            plt.title('Model accuracy')
-            plt.ylabel('Accuracy')
-            plt.xlabel('Epoch')
-            plt.legend(['Train', 'Test'], loc='upper left')
 
-            # Plot training & validation loss values
-            plt.figure(2 * i)
-            plt.plot(history['loss'])
-            plt.plot(history['val_loss'])
-            plt.title('Model loss')
-            plt.ylabel('Loss')
-            plt.xlabel('Epoch')
-            plt.legend(['Train', 'Test'], loc='upper left')
-        plt.show()
-
-    del model, history
-    return data, acc
+    # del model, history, tm, filepath, checkpointer, earlystopping
+    return acc
 
 
 def train_EEGNet(nClasses,
@@ -279,30 +205,19 @@ def train_EEGNet(nClasses,
         plt.show()
 
     del model, history
-    return data, acc
+    return acc
 
 
 def train_rawEEGConvNet(nClasses,
-                        subject,
+                        Samples,
                         Chans=22,
-                        beg=0,
-                        end=4,
                         Colors=1,
-                        srate=250,
-                        dataSelect='4s',
                         batch_size=10,
                         epochs=500,
                         verbose=2,
                         patience=100,
-                        drawflag=False,
-                        prep=False,
+                        subject=None,
                         data=None):
-    Samples = math.ceil(end * srate - beg * srate)
-    if prep:
-        pp = '_pp'
-    else:
-        pp = ''
-
     model = rawEEGConvModel(Chans=Chans, Samples=Samples, Colors=Colors)
     model.summary()
     # export graph of the model
@@ -330,33 +245,6 @@ def train_rawEEGConvNet(nClasses,
     history = []
     if not os.path.exists('model'):  # 判断是否存在
         os.makedirs('model')  # 不存在则创建
-    if data is None:
-        data = {
-            'x_train': None,
-            'x_test': None,
-            'y_train': None,
-            'y_test': None
-        }
-        filepath = os.path.join('data', dataSelect, 'Train',
-                                'A0' + str(subject) + 'T' + pp + '.mat')
-        data['x_train'] = load_data(filepath, label=False)
-        data['x_train'] = bandpassfilter(data['x_train'])
-        data['x_train'] = data['x_train'][:, :,
-                                          math.floor(beg * srate):math.
-                                          ceil(end * srate), np.newaxis]
-        filepath = os.path.join('data', dataSelect, 'Train',
-                                'A0' + str(subject) + 'T_label' + pp + '.mat')
-        data['y_train'] = load_data(filepath)
-        filepath = os.path.join('data', dataSelect, 'Test',
-                                'A0' + str(subject) + 'E' + pp + '.mat')
-        data['x_test'] = load_data(filepath, label=False)
-        data['x_test'] = bandpassfilter(data['x_test'])
-        data['x_test'] = data['x_test'][:, :,
-                                        math.floor(beg * srate):math.
-                                        ceil(end * srate), np.newaxis]
-        filepath = os.path.join('data', dataSelect, 'Test',
-                                'A0' + str(subject) + 'E_label' + pp + '.mat')
-        data['y_test'] = load_data(filepath)
 
     filepath = os.path.join(
         'model',
@@ -374,8 +262,7 @@ def train_rawEEGConvNet(nClasses,
                         epochs=epochs,
                         callbacks=[checkpointer, earlystopping],
                         verbose=verbose,
-                        validation_data=[data['x_test'],
-                                         data['y_test']]).history
+                        validation_data=[data['x_val'], data['y_val']]).history
 
     model = load_model(filepath)
     loss, acc = model.evaluate(data['x_test'],
@@ -389,30 +276,8 @@ def train_rawEEGConvNet(nClasses,
         str(tm.tm_hour) + '_' + str(tm.tm_min) + '_' + str(tm.tm_sec) +
         '_rawEEGConvNet.npy')
     np.save(filepath, history)
-    #history = np.load(filepath,allow_pickle=True)
-    if drawflag:
-        for i in range(1, 10):
-            # Plot training & validation accuracy values
-            plt.figure(2 * i - 1)
-            plt.plot(history['acc'])
-            plt.plot(history['val_acc'])
-            plt.title('Model accuracy')
-            plt.ylabel('Accuracy')
-            plt.xlabel('Epoch')
-            plt.legend(['Train', 'Test'], loc='upper left')
 
-            # Plot training & validation loss values
-            plt.figure(2 * i)
-            plt.plot(history['loss'])
-            plt.plot(history['val_loss'])
-            plt.title('Model loss')
-            plt.ylabel('Loss')
-            plt.xlabel('Epoch')
-            plt.legend(['Train', 'Test'], loc='upper left')
-        plt.show()
-
-    del model, history
-    return data, acc
+    return acc
 
 
 def train_graphEEGConvNet(nClasses,
@@ -826,14 +691,15 @@ class crossValidate(object):
     '''
     Class for K-fold Cross Validation.
 
-    This class has implemented a magic function, for which it can be used like a function.
+    This class has implemented a magic method, for which it can be used like a function.
 
     Parameters
     ----------
     ```txt
-    func            : function, Models needs to do cross validation.
-    dataFunc        : function, Generate data for @func, shape (n_trails, ...). 
+    func            : function, Training models need to cross validate.
+    dataGent        : class, Generate data for @func, shapes (n_trails, ...). 
                       It should discriminate data and label.
+                      More details see core.generators.
     splitMethod     : class, Supports KFold etc. from module sklearn.model_selection.
     kFold           : int, Number of K-fold.
     shuffle         : bool, Optional Whether to shuffle each class's samples before 
@@ -844,8 +710,10 @@ class crossValidate(object):
                       number generator; If None, the random number generator is the 
                       RandomState instance used by np.random. Used when shuffle == True.
     subs            : int, Number of subjects.
-    *a, *args       : tuple, Parameters used by @dataFunc and @func respectively
-    **kw, **kwargs  : dict, Parameters used by @dataFunc and @func respectively
+    isCropped       : bool, Switch of cropped training.
+    *a, *args       : tuple, Parameters used by @dataGent and @func respectively
+    **kw, **kwargs  : dict, Parameters used by @dataGent and @func respectively, **kw 
+                      should include parameters called beg, end and srate.
     ```
 
     Returns
@@ -858,20 +726,24 @@ class crossValidate(object):
     Example
     -------
     ```python
-    def func(*args, **kwargs, subject=None, data=None):
+    def func(Samples, *args, **kwargs, subject=None, data=None):
         ...
         return acc
 
-    def load_raw_data(filepath, label=False, *a, **kw):
+    class dataGenerator:
+        def __init__(self, *a, **kw):
+            ...
+
+        def __call__(self, filepath, label=False):
+            if label:
+                ...
+                return label
+            else:
+                ...
+                return data
         ...
-        if label:
-            ...
-            return label
-        else:
-            ...
-            return data
     ...
-    avg_acc = crossValidate(func, load_raw_data, K=10, subs=9, *a, **kw)(*args, **kwargs)
+    avg_acc = crossValidate(func, dataGenerator, kFold=10, subs=9, *a, **kw)(*args, **kwargs)
     ```
 
     Note
@@ -880,30 +752,59 @@ class crossValidate(object):
     '''
     def __init__(self,
                  func,
-                 dataFunc,
+                 dataGent,
                  splitMethod=StratifiedKFold,
                  kFold=10,
                  shuffle=False,
                  random_state=None,
                  subs=9,
+                 isCropped=False,
                  *args,
                  **kwargs):
         self.func = func
-        self.dataFunc = dataFunc
+        self.dataGent = dataGent
         self.splitMethod = splitMethod
         self.kFold = kFold
         self.shuffle = shuffle
         self.random_state = random_state
         self.subs = subs + 1
+        self.isCropped = isCropped
         self.args = args
         self.kwargs = kwargs
+        if 'beg' in kwargs:
+            self.beg = kwargs['beg']
+        else:
+            raise ValueError(
+                'Parameters pass to dataGent should include `beg`.')
+        if 'end' in kwargs:
+            self.end = kwargs['end']
+        else:
+            raise ValueError(
+                'Parameters pass to dataGent should include `end`.')
+        if 'srate' in kwargs:
+            self.srate = kwargs['srate']
+        else:
+            raise ValueError(
+                'Parameters pass to dataGent should include `srate`.')
+        self.Samples = math.ceil(self.end * self.srate - self.beg * self.srate)
 
     def __call__(self, *args, **kwargs):
+        if self.isCropped:
+            gent = self._read_cropped_data
+            pass
+        else:
+            gent = self._read_data
+            pass
+
         avg_acc = []
         for i in range(1, self.subs):
             accik = []
-            for data in self._read_data(data, i):
-                acc = self.func(*args, **kwargs, subject=i, data=data)
+            for data in gent(i):
+                acc = self.func(*args,
+                                **kwargs,
+                                Samples=self.Samples,
+                                subject=i,
+                                data=data)
                 accik.append(acc)
             avg_acc.append(np.average(np.asarray(accik)))
             del data
@@ -924,7 +825,7 @@ class crossValidate(object):
 
     def setConfig(self,
                   func,
-                  dataFunc,
+                  dataGent,
                   splitMethod=StratifiedKFold,
                   kFold=10,
                   shuffle=False,
@@ -933,7 +834,7 @@ class crossValidate(object):
                   *args,
                   **kwargs):
         self.func = func
-        self.dataFunc = dataFunc
+        self.dataGent = dataGent
         self.splitMethod = splitMethod
         self.kFold = kFold
         self.shuffle = shuffle
@@ -942,7 +843,22 @@ class crossValidate(object):
         self.args = args
         self.kwargs = kwargs
 
-    def _read_data(self, data, subject):
+    def _read_data(self, subject):
+        '''
+        Read data from dataGent.
+
+        Parameters
+        ----------
+        ```txt
+        subject : int, Identifier of subject.
+        ```
+
+        Yields
+        ------
+        ```txt
+        data    : dict, Includes train, val and test data.
+        ```
+        '''
         data = {
             'x_train': None,
             'x_val': None,
@@ -953,11 +869,11 @@ class crossValidate(object):
         }
         filepath = os.path.join('data', '4s', 'Test',
                                 'A0' + str(subject) + 'E.mat')
-        data['x_test'] = self.dataFunc(filepath,
+        data['x_test'] = self.dataGent(filepath,
                                        label=False,
                                        *self.args,
                                        **self.kwargs)
-        data['y_test'] = self.dataFunc(filepath,
+        data['y_test'] = self.dataGent(filepath,
                                        label=True,
                                        *self.args,
                                        **self.kwargs)
@@ -965,11 +881,59 @@ class crossValidate(object):
                                 'A0' + str(subject) + 'T.mat')
         for (data['x_train'],
              data['y_train']), (data['x_val'], data['y_val']) in self._spilt(
-                 self.dataFunc(filepath,
+                 self.dataGent(filepath,
                                label=False,
                                *self.args,
                                **self.kwargs),
-                 self.dataFunc(filepath, label=True, *self.args,
+                 self.dataGent(filepath, label=True, *self.args,
+                               **self.kwargs)):
+            yield data
+
+    def _read_cropped_data(self, subject):
+        '''
+        Read cropped data from dataGent.
+
+        TODO: Should be completed, can't work now.
+
+        Parameters
+        ----------
+        ```txt
+        subject : int, Identifier of subject.
+        ```
+        
+        Yields
+        ------
+        ```txt
+        data    : dict, Includes train, val and test data.
+        ```
+        '''
+        data = {
+            'x_train': None,
+            'x_val': None,
+            'x_test': None,
+            'y_train': None,
+            'y_val': None,
+            'y_test': None
+        }
+        filepath = os.path.join('data', '4s', 'Test',
+                                'A0' + str(subject) + 'E.mat')
+        data['x_test'] = self.dataGent(filepath,
+                                       label=False,
+                                       *self.args,
+                                       **self.kwargs)
+        data['y_test'] = self.dataGent(filepath,
+                                       label=True,
+                                       *self.args,
+                                       **self.kwargs)
+        filepath = os.path.join('data', '4s', 'Train',
+                                'A0' + str(subject) + 'T.mat')
+        for (data['x_train'],
+             data['y_train']), (data['x_val'], data['y_val']) in self._spilt(
+                 self.dataGent(filepath,
+                               label=False,
+                               *self.args,
+                               **self.kwargs),
+                 self.dataGent(filepath, label=True, *self.args,
                                **self.kwargs)):
             yield data
 
@@ -1007,6 +971,6 @@ class crossValidate(object):
                                                      y[val_index])
 
 
-def test(*args, **kwargs):
+def test(Samples, subject=None, data=None, *args, **kwargs):
     print(args, kwargs)
     return 1.

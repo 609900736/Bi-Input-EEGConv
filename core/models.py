@@ -29,7 +29,6 @@ from tensorflow.python.keras.constraints import max_norm, \
 from tensorflow.python.keras import backend as K
 
 from core.regularizers import l1, l2, l1_l2, l2_1, tl1, sgl, tsg
-
 K.set_image_data_format('channels_last')
 
 
@@ -76,8 +75,7 @@ def rawEEGConvModel(Chans,
                         padding='same',
                         use_bias=False,
                         depthwise_constraint=max_norm(1.),
-                        pointwise_regularizer=l1_l2(0.01, 0.01),
-                        depthwise_regularizer=sgl(0.01, 0.01))(s)
+                        pointwise_regularizer=tsg(0.01, 0.01, 0.01))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
     s = dropoutType(dropoutRate)(s)
@@ -707,14 +705,7 @@ def MB3DCNN(nClasses, H, W, Samples):
 
     _add = Add()([_srf_output, _mrf_output, _lrf_output])
     _output = Activation('softmax', name='MB_Output')(_add)
-    model = Model(inputs=_input, outputs=[_srf_output], name='MB3DCNN')
-    model.compile(optimizer=tf.keras.optimizers.Adam(1e-3),
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
-    model.summary()
-    # export graph of the model
-    tf.keras.utils.plot_model(model, 'MB3DCNN.png', show_shapes=True)
-    return model
+    return Model(inputs=_input, outputs=[_output], name='MB3DCNN')
 
 
 if __name__ == '__main__':
