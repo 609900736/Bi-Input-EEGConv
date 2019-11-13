@@ -6,15 +6,21 @@ import math
 import numpy as np
 
 from abc import ABCMeta, abstractmethod
-from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data, load_or_generate_images, highpassfilter, bandpassfilter
+from core.utils import load_data, load_or_gen_filterbank_data, load_or_gen_interestingband_data, load_or_generate_images, highpassfilter, bandpassfilter
 
 
-class BaseGenerator(type, metaclass=ABCMeta):
+class BaseGenerator(object, metaclass=ABCMeta):
     '''
     Base class for all data Generators.
     
-    Implementations must define `_load_data`.
+    Implementations must define `__init__` and `_load_data`.
     '''
+    @abstractmethod
+    def __init__(self, beg=0, end=4, srate=250):
+        self.beg = beg
+        self.end = end
+        self.srate = srate
+
     def __call__(self, filepath, label):
         if label:
             return self._load_label(filepath)
@@ -29,23 +35,21 @@ class BaseGenerator(type, metaclass=ABCMeta):
         return load_data(filepath, label=False)
 
 
-class MB3DCNNGenerator(BaseGenerator):
+class graphGenerator(BaseGenerator):
     '''
-    MB3DCNN data Generator.
+    Graph data Generator.
     '''
     def __init__(self,
-                 H,
-                 W,
+                 H=6,
+                 W=7,
                  beg=0,
                  end=4,
                  srate=250,
                  mode='raw',
                  averageImages=1):
+        super().__init__(beg=beg, end=end, srate=srate)
         self.H = H
         self.W = W
-        self.beg = beg
-        self.end = end
-        self.srate = srate
         self.mode = mode
         self.averageImages = averageImages
 
@@ -60,14 +64,12 @@ class MB3DCNNGenerator(BaseGenerator):
                                        W=self.W)
 
 
-class EEGNetGenerator(BaseGenerator):
+class rawGenerator(BaseGenerator):
     '''
-    EEGNet data Generator.
+    Raw data Generator.
     '''
     def __init__(self, beg=0, end=4, srate=250):
-        self.beg = beg
-        self.end = end
-        self.srate = srate
+        super().__init__(beg=beg, end=end, srate=srate)
 
     def _load_data(self, filepath):
         data = load_data(filepath, label=False)

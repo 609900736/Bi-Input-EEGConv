@@ -32,16 +32,18 @@ from core.regularizers import l1, l2, l1_l2, l2_1, tl1, sgl, tsg
 K.set_image_data_format('channels_last')
 
 
-def rawEEGConvModel(Chans,
-                    Samples,
-                    Colors,
-                    dropoutRate=0.5,
-                    kernLength=64,
-                    F1=8,
-                    D=2,
-                    F2=16,
-                    dtype=tf.float32,
-                    dropoutType='Dropout'):
+def rawEEGConvNet(nClasses,
+                  Chans,
+                  Samples,
+                  Colors,
+                  dropoutRate=0.5,
+                  kernLength=64,
+                  F1=8,
+                  D=2,
+                  F2=16,
+                  norm_rate=.25,
+                  dtype=tf.float32,
+                  dropoutType='Dropout'):
     """
     for weight reusing
 
@@ -58,10 +60,7 @@ def rawEEGConvModel(Chans,
                          'AlphaDropout or Dropout, passed as a string.')
     # Learn from raw EEG signals
     input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
-    s = Conv2D(F1, (1, kernLength),
-               strides=(1, 4),
-               padding='same',
-               use_bias=False)(input_s)
+    s = Conv2D(F1, (1, kernLength), padding='same', use_bias=False)(input_s)
     s = BatchNormalization(axis=-1)(s)
     s = DepthwiseConv2D((Chans, 1),
                         use_bias=False,
@@ -69,19 +68,25 @@ def rawEEGConvModel(Chans,
                         depthwise_constraint=max_norm(1.))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
+    s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
     s = SeparableConv2D(F2, (1, 16),
-                        strides=(1, 8),
                         padding='same',
                         use_bias=False,
-                        depthwise_constraint=max_norm(1.),
-                        pointwise_regularizer=tsg(0.01, 0.01, 0.01))(s)
+                        pointwise_regularizer=tsg(l1=0.0001,
+                                                  l21=0.0001,
+                                                  tl1=0.0001))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
+    s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
+    dense = Dense(nClasses,
+                  kernel_constraint=max_norm(norm_rate, axis=1),
+                  activity_regularizer=l1(0.001))(flatten)
+    _output_s = Activation('softmax')(dense)
 
-    return Model(inputs=input_s, outputs=flatten)
+    return Model(inputs=input_s, outputs=_output_s)
 
 
 def _old_rawEEGConvModel(Chans,
@@ -158,17 +163,19 @@ def _old_rawEEGConvModel(Chans,
     return Model(inputs=input_s, outputs=flatten)
 
 
-def graphEEGConvModel(Colors,
-                      Samples,
-                      H,
-                      W,
-                      dropoutRate=0.5,
-                      kernLength=64,
-                      F3=8,
-                      D=2,
-                      F4=16,
-                      dtype=tf.float32,
-                      dropoutType='Dropout'):
+def graphEEGConvNet(nClasses,
+                    Colors,
+                    Samples,
+                    H,
+                    W,
+                    dropoutRate=0.5,
+                    kernLength=64,
+                    F3=8,
+                    D=2,
+                    F4=16,
+                    norm_rate=.25,
+                    dtype=tf.float32,
+                    dropoutType='Dropout'):
     """
     for weight reusing
 
@@ -210,45 +217,8 @@ def graphEEGConvModel(Colors,
     # g = MaxPooling3D((1, 3, 3))(g)
     g = dropoutType(dropoutRate)(g)
     flatten = Flatten()(g)
-
-    return Model(inputs=input_g, outputs=flatten)
-
-
-def rawEEGConvNet(n_classes,
-                  model,
-                  Colors=1,
-                  Chans=22,
-                  Samples=1000,
-                  norm_rate=0.25,
-                  dtype=tf.float32):
-    # Learn from raw EEG signals
-    input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
-    s = model(input_s)
-    # s = Dense(32, kernel_regularizer=l1_l2())(s)
-    # s = BatchNormalization(axis=-1)(s)
-    # s = Activation('relu')(s)
-    # s = Dense(32, kernel_regularizer=l1_l2())(s)
-    # s = BatchNormalization(axis=-1)(s)
-    # s = Activation('relu')(s)
-    s = Dense(n_classes, kernel_constraint=max_norm(norm_rate))(s)
-    _output_s = Activation('softmax')(s)
-
-    return Model(inputs=input_s, outputs=_output_s)
-
-
-def graphEEGConvNet(n_classes,
-                    model,
-                    Colors=1,
-                    H=32,
-                    W=32,
-                    Samples=1000,
-                    norm_rate=0.25,
-                    dtype=tf.float32):
-    # Learn from EEG graphs
-    input_g = Input(shape=(Samples, H, W, Colors), dtype=dtype)
-    g = model(input_g)
-    g = Dense(n_classes, kernel_constraint=max_norm(norm_rate))(g)
-    _output_g = Activation('softmax')(g)
+    dense = Dense(nClasses, kernel_constraint=max_norm(norm_rate))(flatten)
+    _output_g = Activation('softmax')(dense)
 
     return Model(inputs=input_g, outputs=_output_g)
 
@@ -355,40 +325,40 @@ def _old_BIEEGConvNet(n_classes,
             'SpatialDropout3D, AlphaDropout or Dropout, passed as a string.')
     # Learn from raw EEG signals
     input_s = Input(shape=(Colors, Chans, Samples), dtype=dtype)
-    Ms = rawEEGConvModel(Chans=Chans,
-                         Samples=Samples,
-                         dropoutRate=dropoutRate,
-                         kernLength=kernLength,
-                         F1=F1,
-                         D=D,
-                         F2=F2,
-                         dtype=dtype,
-                         dropoutType=dropoutType)
+    Ms = rawEEGConvNet(n_classes,
+                       Chans=Chans,
+                       Samples=Samples,
+                       Colors=1,
+                       dropoutRate=dropoutRate,
+                       kernLength=kernLength,
+                       F1=F1,
+                       D=D,
+                       F2=F2,
+                       norm_rate=norm_rate,
+                       dtype=dtype,
+                       dropoutType=dropoutType)
     s = Ms(input_s)
 
     # Learn from EEG graphs
     input_g = Input(shape=(Colors, Samples, H, W), dtype=dtype)
-    Mg = graphEEGConvModel(Colors=Colors,
-                           Samples=Samples,
-                           H=H,
-                           W=W,
-                           dropoutRate=dropoutRate,
-                           kernLength=kernLength,
-                           F3=F3,
-                           F4=F4,
-                           F5=F5,
-                           dtype=dtype,
-                           dropoutType=dropoutType)
+    Mg = graphEEGConvNet(n_classes,
+                         Colors=Colors,
+                         Samples=Samples,
+                         H=H,
+                         W=W,
+                         dropoutRate=dropoutRate,
+                         kernLength=kernLength,
+                         F3=F3,
+                         F4=F4,
+                         F5=F5,
+                         norm_rate=norm_rate,
+                         dtype=dtype,
+                         dropoutType=dropoutType)
     g = Mg(input_g)
 
     # Merge both inputs and make predictions
-    x = Concatenate(axis=-1)([s, g])
-    x = Dense(n_classes * 10,
-              activation='relu',
-              kernel_constraint=max_norm(norm_rate))(x)
-    predictions = Dense(n_classes,
-                        activation='softmax',
-                        kernel_constraint=max_norm(norm_rate))(x)
+    x = Add()([s, g])
+    predictions = Dense(n_classes, activation='softmax')(x)
 
     return Model(inputs=[input_s, input_g], outputs=predictions)
 
@@ -704,7 +674,8 @@ def MB3DCNN(nClasses, H, W, Samples):
     _lrf_output = LRF3DCNN(nClasses, mb.shape[2], mb.shape[3], mb.shape[1])(mb)
 
     _add = Add()([_srf_output, _mrf_output, _lrf_output])
-    _output = Activation('softmax', name='MB_Output')(_add)
+    # _output = Activation('softmax', name='MB_Output')(_add)
+    _output = Dense(nClasses, activation='softmax', name='MB_Output')(_add)
     return Model(inputs=_input, outputs=[_output], name='MB3DCNN')
 
 

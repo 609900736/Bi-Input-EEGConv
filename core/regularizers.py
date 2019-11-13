@@ -8,7 +8,6 @@ from tensorflow.python.ops import math_ops
 from tensorflow.python.keras.regularizers import Regularizer
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
-tf.keras.layers.ActivityRegularization
 
 
 class TSG(Regularizer):
@@ -45,7 +44,8 @@ class TSG(Regularizer):
         if self.l1:
             regularization += self.l1 * math_ops.reduce_sum(math_ops.abs(x))
         if self.l2:
-            regularization += self.l2 * math_ops.reduce_sum(math_ops.square(x))
+            regularization += self.l2 * math_ops.sqrt(
+                math_ops.reduce_sum(math_ops.square(x)))
         if self.l12:
             regularization += self.l12 * math_ops.sqrt(
                 math_ops.reduce_sum(
@@ -53,9 +53,9 @@ class TSG(Regularizer):
         if self.l21:
             regularization += self.l21 * math_ops.reduce_sum(
                 math_ops.sqrt(math_ops.reduce_sum(math_ops.square(x), 1)))
-        if self.tl1:# for feature selection matrix shapes (None, features, timesteps)
+        if self.tl1:  # for feature selection matrix shapes (None, channels, timesteps, features)
             regularization += self.tl1 * math_ops.reduce_sum(
-                math_ops.abs(math_ops.sub(x[:, :, :-1], x[:, :, 1:])))
+                math_ops.abs(math_ops.sub(x[:, :, :-1, :], x[:, :, 1:, :])))
         return regularization
 
     def get_config(self):
