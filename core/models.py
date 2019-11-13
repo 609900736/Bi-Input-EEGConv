@@ -2,6 +2,7 @@
 
 import tensorflow as tf
 from tensorflow.python.keras import Input, Model
+from tensorflow.python.keras.engine.base_layer import Layer
 from tensorflow.python.keras.layers import Dense, \
                                            Conv2D, \
                                            Conv3D, \
@@ -21,6 +22,7 @@ from tensorflow.python.keras.layers import Dense, \
                                            Flatten, \
                                            Lambda, \
                                            Attention, \
+                                           AdditiveAttention, \
                                            Multiply, \
                                            Add
 from tensorflow.python.keras.constraints import max_norm, \
@@ -73,9 +75,7 @@ def rawEEGConvNet(nClasses,
     s = SeparableConv2D(F2, (1, 16),
                         padding='same',
                         use_bias=False,
-                        pointwise_regularizer=tsg(l1=0.0001,
-                                                  l21=0.0001,
-                                                  tl1=0.0001))(s)
+                        pointwise_regularizer=sgl(l1=0.0001, l21=0.0001))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
     s = AveragePooling2D((1, 8))(s)

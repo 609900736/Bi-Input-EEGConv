@@ -19,9 +19,9 @@ srate = 250
 
 
 if __name__ == '__main__':
-    crossValidate(create_rawEEGConvNet,
+    crossValidate(create_EEGNet,
                   rawGenerator,
-                  kFold=10,
+                  kFold=5,
                   beg=0,
                   end=4,
                   srate=srate,

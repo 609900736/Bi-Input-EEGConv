@@ -49,13 +49,13 @@ class TSG(Regularizer):
         if self.l12:
             regularization += self.l12 * math_ops.sqrt(
                 math_ops.reduce_sum(
-                    math_ops.square(math_ops.reduce_sum(math_ops.abs(x), 1))))
+                    math_ops.square(math_ops.reduce_sum(math_ops.abs(x), 2))))
         if self.l21:
             regularization += self.l21 * math_ops.reduce_sum(
-                math_ops.sqrt(math_ops.reduce_sum(math_ops.square(x), 1)))
-        if self.tl1:  # for feature selection matrix shapes (None, channels, timesteps, features)
+                math_ops.sqrt(math_ops.reduce_sum(math_ops.square(x), 2)))
+        if self.tl1:  # for feature selection weights matrix shapes (None, ?, ?)
             regularization += self.tl1 * math_ops.reduce_sum(
-                math_ops.abs(math_ops.sub(x[:, :, :-1, :], x[:, :, 1:, :])))
+                math_ops.abs(math_ops.sub(x[:, :, :-1], x[:, :, 1:])))
         return regularization
 
     def get_config(self):
