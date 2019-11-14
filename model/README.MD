@@ -30,3 +30,6 @@ Introduction of existed saved models:
 	2019_11_12_19_59_20:	10-fold cross validation EEGNet(8,2) with 0.5-100Hz bandpass filtered data, TSG(.0001,.0001,.0001) regularizer in 						pointwise kernal, and l1(.001) regularizer in dense output
 	2019_11_13_10_45_1:		10-fold cross validation EEGNet(8,2) with 0.5-100Hz bandpass filtered data
 	2019_11_13_16_31_9:		5-fold cross validation EEGNet(8,2) with 0.5-100Hz bandpass filtered data
+	2019_11_14_17_55_35:	5-fold average validation EEGNet(8,2) with 0.5-100Hz bandpass filtered data
+							with sgl(.01,.01) regularizer in pointwise convolution kernal, tsc(.01) regularizer in seperable convolution output, l1_l2(.01,.01) regularizer in dense kernal, and l1(.01) regularizer in dense output
+	

@@ -30,7 +30,7 @@ from tensorflow.python.keras.constraints import max_norm, \
                                                 unit_norm
 from tensorflow.python.keras import backend as K
 
-from core.regularizers import l1, l2, l1_l2, l2_1, tl1, sgl, tsg
+from core.regularizers import l1, l2, l1_l2, l2_1, tsc, sgl, tsg
 K.set_image_data_format('channels_last')
 
 
@@ -75,15 +75,16 @@ def rawEEGConvNet(nClasses,
     s = SeparableConv2D(F2, (1, 16),
                         padding='same',
                         use_bias=False,
-                        pointwise_regularizer=sgl(l1=0.0001, l21=0.0001))(s)
+                        pointwise_regularizer=sgl(l1=0.01, l21=0.01),
+                        activity_regularizer=tsc(tl1=0.01))(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
     dense = Dense(nClasses,
-                  kernel_constraint=max_norm(norm_rate, axis=1),
-                  activity_regularizer=l1(0.001))(flatten)
+                  kernel_regularizer=l1_l2(l1=0.01, l2=0.01),
+                  activity_regularizer=l1(0.01))(flatten)
     _output_s = Activation('softmax')(dense)
 
     return Model(inputs=input_s, outputs=_output_s)

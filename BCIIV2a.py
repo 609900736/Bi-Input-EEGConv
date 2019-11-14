@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 
 from core.train import create_EEGNet, create_rawEEGConvNet, create_graphEEGConvNet, create_MB3DCNN, crossValidate
 from core.generators import rawGenerator, graphGenerator
+from core.splits import StratifiedKFold, AllTrain
+
 from tensorflow.python.keras import backend as K
+
 
 # tf.compat.v1.enable_eager_execution()
 #K.set_session(tf.Session(config=tf.ConfigProto(device_count={'CPU':10},
@@ -19,8 +22,9 @@ srate = 250
 
 
 if __name__ == '__main__':
-    crossValidate(create_EEGNet,
+    crossValidate(create_rawEEGConvNet,
                   rawGenerator,
+                  AllTrain,
                   kFold=5,
                   beg=0,
                   end=4,

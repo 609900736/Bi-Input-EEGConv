@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 
 from tensorflow.python.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.python.keras.models import load_model
-from sklearn.model_selection import StratifiedKFold, GridSearchCV
 
 from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data, load_or_generate_images, highpassfilter, bandpassfilter
 from core.models import EEGNet, rawEEGConvNet, graphEEGConvNet, BiInputsEEGConvNet, ShallowConvNet, DeepConvNet, MB3DCNN
+from core.splits import StratifiedKFold
 
 
 def create_MB3DCNN(nClasses,
@@ -362,7 +362,7 @@ class crossValidate(object):
     dataGent        : class, Generate data for @built_in, shapes (n_trails, ...). 
                       It should discriminate data and label.
                       More details see core.generators.
-    splitMethod     : class, Supports KFold etc. from module sklearn.model_selection.
+    splitMethod     : class, Support split methods from module sklearn.model_selection.
     kFold           : int, Number of K-fold.
     shuffle         : bool, Optional Whether to shuffle each class's samples before 
                       splitting into batches, default = False.
@@ -392,7 +392,7 @@ class crossValidate(object):
     Example
     -------
     ```python
-    from sklearn.model_selection import StratifiedKFold
+    from core.splits import StratifiedKFold
 
     def create_model(Samples, *args, **kwargs):
         ...
@@ -431,10 +431,10 @@ class crossValidate(object):
     def __init__(self,
                  built_in,
                  dataGent,
+                 splitMethod=StratifiedKFold,
                  beg=0,
                  end=4,
                  srate=250,
-                 splitMethod=StratifiedKFold,
                  kFold=10,
                  shuffle=False,
                  random_state=None,
@@ -508,6 +508,12 @@ class crossValidate(object):
                                                verbose=1,
                                                save_best_only=True)
 
+                validation_name = 'Cross Validation'
+                if data['x_val'] is None:
+                    data['x_val'] = data['x_test']
+                    data['y_val'] = data['y_test']
+                    validation_name = 'Average Validation'
+
                 history = model.fit(
                     x=data['x_train'],
                     y=data['y_train'],
@@ -540,7 +546,7 @@ class crossValidate(object):
             avg_acc.append(np.average(np.asarray(accik)))
             del data
         total_avg_acc = np.average(np.asarray(avg_acc))
-        print('{:d}-fold Cross Validation Accuracy'.format(self.kFold))
+        print('{:d}-fold ' + validation_name + ' Accuracy'.format(self.kFold))
         for i in range(1, self.subs):
             print('Subject {0:0>2d}: {1:.2%}'.format(i, avg_acc[i - 1]))
         print('Average   : {:.2%}'.format(total_avg_acc))
@@ -557,10 +563,10 @@ class crossValidate(object):
     def setConfig(self,
                   built_in,
                   dataGent,
+                  splitMethod=StratifiedKFold,
                   beg=0,
                   end=4,
                   srate=250,
-                  splitMethod=StratifiedKFold,
                   kFold=10,
                   shuffle=False,
                   random_state=None,
@@ -693,7 +699,7 @@ class crossValidate(object):
 
         groups : array-like, with shape (n_samples,), optional
             Group labels for the samples used while splitting the dataset into
-            train/test set.
+            train/test set. Action depends on the split method you choose.
 
         Yields
         ------
@@ -708,5 +714,10 @@ class crossValidate(object):
                               random_state=self.random_state)
         for train_index, val_index in sm.split(X, y, groups):
             # (x_train, y_train), (x_val, y_val)
-            yield (X[train_index], y[train_index]), (X[val_index],
-                                                     y[val_index])
+            if not train_index.any():
+                raise ValueError('Training data shouldn\'t be empty.')
+            elif not val_index.any():
+                yield (X[train_index], y[train_index]), (None, None)
+            else:
+                yield (X[train_index], y[train_index]), (X[val_index],
+                                                         y[val_index])
