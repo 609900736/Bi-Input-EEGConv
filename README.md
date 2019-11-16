@@ -34,7 +34,9 @@ import BIEEGConv as bieeg
 
 ## Experiment Plans
 
-1. EEGNet(8,2) with 5-fold average validation
-2. SGLEEGNet(16,4) with 5-fold average validation
-3. EEGNet(16,4) with 5-fold average validation
-4. SGLEEGNet(16,4) with different sparse parameters and 5-fold average validation
+1. ~~EEGNet(8,2) with 5-fold average validation~~
+2. ~~TSGEEGNet(16,4) with 5-fold average validation~~
+3. ~~EEGNet(16,4) with 5-fold average validation~~
+4. TSGEEGNet(16,4) with different sparse parameters and 5-fold average validation
+5. cropped training
+6. add attention method

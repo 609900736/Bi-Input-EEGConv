@@ -1,6 +1,7 @@
 # coding:utf-8
 
 import os
+import sys
 import time
 import math
 import numpy as np
@@ -13,6 +14,8 @@ from tensorflow.python.keras.models import load_model
 from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data, load_or_generate_images, highpassfilter, bandpassfilter
 from core.models import EEGNet, rawEEGConvNet, graphEEGConvNet, BiInputsEEGConvNet, ShallowConvNet, DeepConvNet, MB3DCNN
 from core.splits import StratifiedKFold
+
+console = sys.stdout
 
 
 def create_MB3DCNN(nClasses,
@@ -33,10 +36,17 @@ def create_MB3DCNN(nClasses,
 def create_EEGNet(nClasses,
                   Samples,
                   Chans=22,
+                  F1=8,
+                  D=2,
                   optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy']):
-    model = EEGNet(nClasses, Chans=Chans, Samples=Samples)
+    model = EEGNet(nClasses,
+                   Chans=Chans,
+                   Samples=Samples,
+                   F1=F1,
+                   D=D,
+                   F2=F1 * D)
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
     model.summary()
     # export graph of the model
@@ -48,13 +58,18 @@ def create_rawEEGConvNet(nClasses,
                          Samples,
                          Chans=22,
                          Colors=1,
+                         F1=8,
+                         D=2,
                          optimizer=tf.keras.optimizers.Adam(1e-3),
                          loss='sparse_categorical_crossentropy',
                          metrics=['accuracy']):
     model = rawEEGConvNet(nClasses,
                           Chans=Chans,
                           Samples=Samples,
-                          Colors=Colors)
+                          Colors=Colors,
+                          F1=F1,
+                          D=D,
+                          F2=F1 * D)
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
     # export graph of the model
     model.summary()
@@ -478,6 +493,8 @@ class crossValidate(object):
 
         if not os.path.exists('model'):
             os.makedirs('model')
+        if not os.path.exists('result'):
+            os.makedirs('result')
 
         model = self.built_in(*args, **kwargs, Samples=self.Samples)
         # save initial weights
@@ -529,12 +546,7 @@ class crossValidate(object):
                                            batch_size=self.batch_size,
                                            verbose=self.verbose)
 
-                filepath = os.path.join(
-                    'model',
-                    str(tm.tm_year) + '_' + str(tm.tm_mon) + '_' +
-                    str(tm.tm_mday) + '_' + str(tm.tm_hour) + '_' +
-                    str(tm.tm_min) + '_' + str(tm.tm_sec) + '_A0' + str(i) +
-                    'T_' + self.modelstr + '(' + str(k) + ').npy')
+                filepath = filepath[:-3] + '.npy'
                 np.save(filepath, history)
 
                 # reset layers weights to train a new one next fold.
@@ -546,10 +558,20 @@ class crossValidate(object):
             avg_acc.append(np.average(np.asarray(accik)))
             del data
         total_avg_acc = np.average(np.asarray(avg_acc))
-        print('{:d}-fold ' + validation_name + ' Accuracy'.format(self.kFold))
-        for i in range(1, self.subs):
-            print('Subject {0:0>2d}: {1:.2%}'.format(i, avg_acc[i - 1]))
-        print('Average   : {:.2%}'.format(total_avg_acc))
+        filepath = os.path.join(
+            'result',
+            str(tm.tm_year) + '_' + str(tm.tm_mon) + '_' + str(tm.tm_mday) +
+            '_' + str(tm.tm_hour) + '_' + str(tm.tm_min) + '_' +
+            str(tm.tm_sec) + '_' + self.modelstr + '.txt')
+        with open(filepath, 'w+') as f:
+            sys.stdout = f
+            print('{0:s} {1:d}-fold ' + validation_name +
+                  ' Accuracy'.format(self.modelstr, self.kFold))
+            for i in range(1, self.subs):
+                print('Subject {0:0>2d}: {1:.2%}'.format(i, avg_acc[i - 1]))
+            print('Average   : {:.2%}'.format(total_avg_acc))
+            sys.stdout = console
+            print(f.readlines())
         avg_acc.append(total_avg_acc)
         return avg_acc
 
@@ -557,8 +579,8 @@ class crossValidate(object):
         print(
             'Method: {0:s}\nSplit Method: {1:s}\nCross Validation Fold: {2:d}\n'
             'shuffle: {3}\nrandom_state: {4:d}\nNumber of subjects: {5:d}'.
-            format(self.built_in.__name__, self.splitMethod.__name__,
-                   self.kFold, self.shuffle, self.random_state, self.subs))
+            format(self.modelstr, self.splitMethod.__name__, self.kFold,
+                   self.shuffle, self.random_state, self.subs))
 
     def setConfig(self,
                   built_in,
