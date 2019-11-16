@@ -72,6 +72,7 @@ def rawEEGConvNet(nClasses,
     s = Activation('elu')(s)
     s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
+    # (None, 1, T, F) how to choose F in T
     s = SeparableConv2D(F2, (1, 16),
                         padding='same',
                         use_bias=False,
@@ -82,9 +83,8 @@ def rawEEGConvNet(nClasses,
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
-    dense = Dense(nClasses,
-                  kernel_regularizer=l1_l2(l1=0.01, l2=0.01),
-                  activity_regularizer=l1(0.01))(flatten)
+    dense = Dense(nClasses, kernel_regularizer=l1_l2(l1=0.001,
+                                                     l2=0.001))(flatten)
     _output_s = Activation('softmax')(dense)
 
     return Model(inputs=input_s, outputs=_output_s)
