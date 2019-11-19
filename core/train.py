@@ -8,8 +8,8 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from tensorflow.python.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.python.keras.models import load_model
+from tensorflow_core.python.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow_core.python.keras.models import load_model
 
 from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data, load_or_generate_images, highpassfilter, bandpassfilter
 from core.models import EEGNet, rawEEGConvNet, graphEEGConvNet, BiInputsEEGConvNet, ShallowConvNet, DeepConvNet, MB3DCNN
@@ -36,17 +36,18 @@ def create_MB3DCNN(nClasses,
 def create_EEGNet(nClasses,
                   Samples,
                   Chans=22,
-                  F1=8,
-                  D=2,
+                  F=9,
+                  D=4,
+                  Ns=4,
                   optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy']):
     model = EEGNet(nClasses,
                    Chans=Chans,
                    Samples=Samples,
-                   F1=F1,
+                   F1=F,
                    D=D,
-                   F2=F1 * D)
+                   F2=nClasses * 2 * Ns)
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
     model.summary()
     # export graph of the model
@@ -58,8 +59,12 @@ def create_rawEEGConvNet(nClasses,
                          Samples,
                          Chans=22,
                          Colors=1,
-                         F1=8,
-                         D=2,
+                         F=9,
+                         D=4,
+                         Ns=4,
+                         l1=0.001,
+                         l21=0.001,
+                         tl1=0.001,
                          optimizer=tf.keras.optimizers.Adam(1e-3),
                          loss='sparse_categorical_crossentropy',
                          metrics=['accuracy']):
@@ -67,9 +72,12 @@ def create_rawEEGConvNet(nClasses,
                           Chans=Chans,
                           Samples=Samples,
                           Colors=Colors,
-                          F1=F1,
+                          F1=F,
                           D=D,
-                          F2=F1 * D)
+                          F2=nClasses * 2 * Ns,
+                          l1=l1,
+                          l21=l21,
+                          tl1=tl1)
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
     # export graph of the model
     model.summary()
@@ -495,6 +503,7 @@ class crossValidate(object):
             os.makedirs('model')
         if not os.path.exists('result'):
             os.makedirs('result')
+        validation_name = 'Cross Validation'
 
         model = self.built_in(*args, **kwargs, Samples=self.Samples)
         # save initial weights
@@ -525,11 +534,11 @@ class crossValidate(object):
                                                verbose=1,
                                                save_best_only=True)
 
-                validation_name = 'Cross Validation'
                 if data['x_val'] is None:
                     data['x_val'] = data['x_test']
                     data['y_val'] = data['y_test']
-                    validation_name = 'Average Validation'
+                    if k == 1:
+                        validation_name = 'Average Validation'
 
                 history = model.fit(
                     x=data['x_train'],
@@ -565,13 +574,15 @@ class crossValidate(object):
             str(tm.tm_sec) + '_' + self.modelstr + '.txt')
         with open(filepath, 'w+') as f:
             sys.stdout = f
-            print('{0:s} {1:d}-fold ' + validation_name +
-                  ' Accuracy'.format(self.modelstr, self.kFold))
+            print(('{0:s} {1:d}-fold ' + validation_name + ' Accuracy').format(
+                self.modelstr, self.kFold))
             for i in range(1, self.subs):
                 print('Subject {0:0>2d}: {1:.2%}'.format(i, avg_acc[i - 1]))
             print('Average   : {:.2%}'.format(total_avg_acc))
             sys.stdout = console
+            f.seek(0, 0)
             print(f.readlines())
+            f.close()
         avg_acc.append(total_avg_acc)
         return avg_acc
 

@@ -32,7 +32,12 @@ class BaseGenerator(object, metaclass=ABCMeta):
 
     @abstractmethod
     def _load_data(self, filepath):
-        return load_data(filepath, label=False)
+        data = load_data(filepath, label=False)
+        data = data[:, :,
+                    math.floor(self.beg *
+                               self.srate):math.ceil(self.end *
+                                                     self.srate), np.newaxis]
+        return data
 
 
 class graphGenerator(BaseGenerator):

@@ -1,4 +1,8 @@
 # coding:utf-8
+"""
+StratifiedKFold and AllTrain are avalueable. Others are not sure.
+TODO: Still some problems should be fixed.
+"""
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.model_selection import GroupKFold

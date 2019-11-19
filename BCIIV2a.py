@@ -10,13 +10,9 @@ from core.train import create_EEGNet, create_rawEEGConvNet, create_graphEEGConvN
 from core.generators import rawGenerator, graphGenerator
 from core.splits import StratifiedKFold, AllTrain
 
-from tensorflow.python.keras import backend as K
+from tensorflow_core.python.keras import backend as K
 
 
-# tf.compat.v1.enable_eager_execution()
-#K.set_session(tf.Session(config=tf.ConfigProto(device_count={'CPU':10},
-#                                               intra_op_parallelism_threads=10,
-#                                               inter_op_parallelism_threads=2)))
 K.set_image_data_format('channels_last')
 srate = 250
 
@@ -30,5 +26,5 @@ if __name__ == '__main__':
                   end=4,
                   srate=srate,
                   epochs=1200,
-                  patience=300)(4, F1=16, D=4)
+                  patience=300)(4, F=16, D=10, Ns=4)
     pass

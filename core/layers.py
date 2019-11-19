@@ -1,7 +1,7 @@
 # coding:utf-8
-from tensorflow.python.keras.layers import Layer, Attention
-
-from core.regularizers import TSG
+from tensorflow_core.python.keras.layers import Attention
+from tensorflow_core.python.keras.engine.base_layer import Layer
+from core.regularizers import TSG as _TSG
 
 
 # TODO: Construct attention layers
@@ -95,8 +95,6 @@ class TSGRegularization(Layer):
 
     Arguments:
         l1  : float, Positive L1 regularization factor.
-        l2  : float, Positive L2 regularization factor.
-        l12 : float, Positive L12 regularization factor.
         l21 : float, Positive L21 regularization factor.
         tl1 : float, Positive TL1 regularization factor.
 
@@ -108,15 +106,11 @@ class TSGRegularization(Layer):
     Output shape:
         Same shape as input.
   """
-    def __init__(self, l1=0., l2=0., l21=0., tl1=0., **kwargs):
-        super().__init__(activity_regularizer=TSG(l1=l1,
-                                                  l2=l2,
-                                                  l21=l21,
-                                                  tl1=tl1),
+    def __init__(self, l1=0., l21=0., tl1=0., **kwargs):
+        super().__init__(activity_regularizer=_TSG(l1=l1, l21=l21, tl1=tl1),
                          **kwargs)
         self.supports_masking = True
         self.l1 = l1
-        self.l2 = l2
         self.l21 = l21
         self.tl1 = tl1
 
@@ -124,11 +118,6 @@ class TSGRegularization(Layer):
         return input_shape
 
     def get_config(self):
-        config = {
-            'l1': self.l1,
-            'l2': self.l2,
-            'l21': self.l21,
-            'tl1': self.tl1
-        }
+        config = {'l1': self.l1, 'l21': self.l21, 'tl1': self.tl1}
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))

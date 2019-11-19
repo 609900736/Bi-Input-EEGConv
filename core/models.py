@@ -1,36 +1,36 @@
 # coding:utf-8
 
 import tensorflow as tf
-from tensorflow.python.keras import Input, Model
-from tensorflow.python.keras.engine.base_layer import Layer
-from tensorflow.python.keras.layers import Dense, \
-                                           Conv2D, \
-                                           Conv3D, \
-                                           Concatenate, \
-                                           BatchNormalization, \
-                                           AveragePooling2D, \
-                                           AveragePooling3D, \
-                                           MaxPooling2D, \
-                                           MaxPooling3D, \
-                                           SeparableConv2D, \
-                                           DepthwiseConv2D, \
-                                           Activation, \
-                                           SpatialDropout2D, \
-                                           SpatialDropout3D, \
-                                           Dropout, \
-                                           AlphaDropout, \
-                                           Flatten, \
-                                           Lambda, \
-                                           Attention, \
-                                           AdditiveAttention, \
-                                           Multiply, \
-                                           Add
-from tensorflow.python.keras.constraints import max_norm, \
-                                                min_max_norm, \
-                                                unit_norm
-from tensorflow.python.keras import backend as K
 
-from core.regularizers import l1, l2, l1_l2, l2_1, tsc, sgl, tsg
+from tensorflow_core.python.keras import Input, Model
+from tensorflow_core.python.keras.layers import Dense, \
+                                                Conv2D, \
+                                                Conv3D, \
+                                                Concatenate, \
+                                                BatchNormalization, \
+                                                AveragePooling2D, \
+                                                AveragePooling3D, \
+                                                MaxPooling2D, \
+                                                MaxPooling3D, \
+                                                SeparableConv2D, \
+                                                DepthwiseConv2D, \
+                                                Activation, \
+                                                SpatialDropout2D, \
+                                                SpatialDropout3D, \
+                                                Dropout, \
+                                                AlphaDropout, \
+                                                Flatten, \
+                                                Lambda, \
+                                                Multiply, \
+                                                Add
+from tensorflow_core.python.keras.constraints import max_norm, \
+                                                     min_max_norm, \
+                                                     unit_norm
+from tensorflow_core.python.keras import backend as K
+
+from core.regularizers import l_1, l_2, l1_l2, l2_1, tsc, sgl, tsg
+from core.layers import TSGRegularization, rawEEGAttention, graphEEGAttention
+
 K.set_image_data_format('channels_last')
 
 
@@ -40,10 +40,13 @@ def rawEEGConvNet(nClasses,
                   Colors,
                   dropoutRate=0.5,
                   kernLength=64,
-                  F1=8,
-                  D=2,
-                  F2=16,
-                  norm_rate=.25,
+                  F1=9,
+                  D=4,
+                  F2=32,
+                  l1=0.001,
+                  l21=0.001,
+                  tl1=0.001,
+                  norm_rate=0.25,
                   dtype=tf.float32,
                   dropoutType='Dropout'):
     """
@@ -61,8 +64,8 @@ def rawEEGConvNet(nClasses,
         raise ValueError('dropoutType must be one of SpatialDropout2D, '
                          'AlphaDropout or Dropout, passed as a string.')
     # Learn from raw EEG signals
-    input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
-    s = Conv2D(F1, (1, kernLength), padding='same', use_bias=False)(input_s)
+    _input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
+    s = Conv2D(F1, (1, kernLength), padding='same', use_bias=False)(_input_s)
     s = BatchNormalization(axis=-1)(s)
     s = DepthwiseConv2D((Chans, 1),
                         use_bias=False,
@@ -72,96 +75,20 @@ def rawEEGConvNet(nClasses,
     s = Activation('elu')(s)
     s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
-    # (None, 1, T, F) how to choose F in T
-    s = SeparableConv2D(F2, (1, 16),
-                        padding='same',
-                        use_bias=False,
-                        pointwise_regularizer=sgl(l1=0.01, l21=0.01),
-                        activity_regularizer=tsc(tl1=0.01))(s)
+    s = Conv2D(F2, (1, 1),
+               use_bias=False,
+               kernel_regularizer=sgl(l1, l21),
+               activity_regularizer=tsc(tl1))(s)
+    # s = TSGRegularization(l1, l21, tl1)(s)
     s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
-    dense = Dense(nClasses, kernel_regularizer=l1_l2(l1=0.001,
-                                                     l2=0.001))(flatten)
-    _output_s = Activation('softmax')(dense)
+    dense = Dense(nClasses, kernel_constraint=max_norm(norm_rate))(flatten)
+    _output_s = Activation('softmax', name='softmax')(dense)
 
-    return Model(inputs=input_s, outputs=_output_s)
-
-
-def _old_rawEEGConvModel(Chans,
-                         Samples,
-                         Colors,
-                         dropoutRate=0.5,
-                         kernLength=64,
-                         F1=8,
-                         D=2,
-                         F2=16,
-                         dtype=tf.float32,
-                         dropoutType='Dropout'):
-    """
-    for weight reusing
-
-    see BIEEGConvNet
-    """
-    if dropoutType == 'SpatialDropout2D':
-        dropoutType = SpatialDropout2D
-    elif dropoutType == 'Dropout':
-        dropoutType = Dropout
-    elif dropoutType == 'AlphaDropout':
-        dropoutType = AlphaDropout
-    else:
-        raise ValueError('dropoutType must be one of SpatialDropout2D, '
-                         'AlphaDropout or Dropout, passed as a string.')
-    # Learn from raw EEG signals
-    l_m = []
-    input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
-    for i in range(Colors):
-        input = Input(shape=(Chans, Samples, 1), dtype=dtype)
-        s = Conv2D(1, (1, kernLength), padding='same', use_bias=False)(input)
-        s = BatchNormalization(axis=-1)(s)
-        s = DepthwiseConv2D((Chans, 1),
-                            use_bias=False,
-                            depth_multiplier=D,
-                            depthwise_constraint=max_norm(1.))(s)
-        s = BatchNormalization(axis=-1)(s)
-        s = Activation('elu')(s)
-        s = AveragePooling2D((1, 4))(s)
-        s = dropoutType(dropoutRate)(s)
-        s = SeparableConv2D(1 * D, (1, 16), padding='same', use_bias=False)(s)
-        s = BatchNormalization(axis=-1)(s)
-        s = Activation('elu')(s)
-        s = AveragePooling2D((1, 8))(s)
-        s = dropoutType(dropoutRate)(s)
-        model = Model(inputs=input, outputs=s)
-        l_m.append(model)
-    l_s = []
-    for i in range(Colors):
-        l_s.append(l_m[i](Lambda(lambda s: s[:, :, :, i:i + 1])(input_s)))
-    con = Concatenate(axis=-1)(l_s)
-    #l = []
-    #for i in range(2*D):
-    #    for j in range(Colors):
-    #        l.append(Lambda(lambda s:s[:,:,:,i+2*D*j:i+2*D*j+1])(con))
-    #con = Concatenate(axis=-1)(l)
-    #con = Conv2D(F1, (kernLength, 1), padding = 'same', use_bias = False, data_format = 'channels_first')(con)
-    #con = BatchNormalization(axis = 1)(con)
-    #con = DepthwiseConv2D((1, Colors), use_bias = False, depth_multiplier = D,
-    #                      depthwise_constraint = max_norm(1.), data_format = 'channels_first')(con)
-    #con = BatchNormalization(axis = 1)(con)
-    #con = Activation('elu')(con)
-    #con = AveragePooling2D((1, F2), data_format = 'channels_first')(con)
-    #con = dropoutType(dropoutRate)(con)
-    con = Conv2D(F2, (1, 1), use_bias=False)(con)
-    # con = BatchNormalization(axis=-1)(con)
-    # con = Activation('elu')(con)
-    #con = AveragePooling2D((1, 2))(con)
-    #con = AveragePooling2D((1, 5), data_format = 'channels_first')(con)
-    # con = dropoutType(dropoutRate)(con)
-    flatten = Flatten()(con)
-
-    return Model(inputs=input_s, outputs=flatten)
+    return Model(inputs=_input_s, outputs=_output_s)
 
 
 def graphEEGConvNet(nClasses,
