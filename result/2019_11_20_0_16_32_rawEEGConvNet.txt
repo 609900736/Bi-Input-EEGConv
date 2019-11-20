@@ -1,0 +1,11 @@
+rawEEGConvNet 5-fold Average Validation Accuracy
+Subject 01: 81.14%
+Subject 02: 63.82%
+Subject 03: 88.57%
+Subject 04: 59.91%
+Subject 05: 56.74%
+Subject 06: 55.81%
+Subject 07: 76.82%
+Subject 08: 80.30%
+Subject 09: 64.55%
+Average   : 69.74%

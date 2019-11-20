@@ -1,0 +1,11 @@
+EEGNet 5-fold Average Validation Accuracy
+Subject 01: 84.34%
+Subject 02: 61.91%
+Subject 03: 95.38%
+Subject 04: 69.74%
+Subject 05: 58.19%
+Subject 06: 53.58%
+Subject 07: 87.29%
+Subject 08: 83.25%
+Subject 09: 80.83%
+Average   : 74.95%
