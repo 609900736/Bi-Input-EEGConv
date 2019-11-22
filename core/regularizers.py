@@ -63,7 +63,7 @@ class TSG(Regularizer):
                                                 1))))
             if self.tl1:
                 regularization += self.tl1 * math_ops.reduce_sum(
-                    math_ops.sub(ntf[n, :-1, :], ntf[n, 1:, :]))
+                    math_ops.abs(math_ops.sub(ntf[n, :-1, :], ntf[n, 1:, :])))
         return regularization
 
     def get_config(self):

@@ -26,5 +26,5 @@ if __name__ == '__main__':
                   end=4,
                   srate=srate,
                   epochs=1200,
-                  patience=300)(4, F=16, D=10, Ns=4)
+                  patience=300)(4, F=16, D=10, Ns=20, tl1=1e-5)
     pass

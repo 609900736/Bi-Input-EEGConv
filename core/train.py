@@ -14,6 +14,7 @@ from tensorflow_core.python.keras.models import load_model
 from core.utils import load_data, load_or_gen_filterbank_data, load_locs, load_or_gen_interestingband_data, load_or_generate_images, highpassfilter, bandpassfilter
 from core.models import EEGNet, rawEEGConvNet, graphEEGConvNet, BiInputsEEGConvNet, ShallowConvNet, DeepConvNet, MB3DCNN
 from core.splits import StratifiedKFold
+from core.callbacks import MyModelCheckpoint
 
 console = sys.stdout
 
@@ -530,9 +531,11 @@ class crossValidate(object):
                     str(tm.tm_mday) + '_' + str(tm.tm_hour) + '_' +
                     str(tm.tm_min) + '_' + str(tm.tm_sec) + '_A0' + str(i) +
                     'T_' + self.modelstr + '(' + str(k) + ').h5')
-                checkpointer = ModelCheckpoint(filepath=filepath,
-                                               verbose=1,
-                                               save_best_only=True)
+                checkpointer = MyModelCheckpoint(filepath=filepath,
+                                                 verbose=1,
+                                                 save_best_only=True,
+                                                 statistic_best=True,
+                                                 p=0.05)
 
                 if data['x_val'] is None:
                     data['x_val'] = data['x_test']

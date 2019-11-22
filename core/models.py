@@ -22,6 +22,7 @@ from tensorflow_core.python.keras.layers import Dense, \
                                                 Flatten, \
                                                 Lambda, \
                                                 Multiply, \
+                                                Reshape, \
                                                 Add
 from tensorflow_core.python.keras.constraints import max_norm, \
                                                      min_max_norm, \
@@ -29,7 +30,7 @@ from tensorflow_core.python.keras.constraints import max_norm, \
 from tensorflow_core.python.keras import backend as K
 
 from core.regularizers import l_1, l_2, l1_l2, l2_1, tsc, sgl, tsg
-from core.layers import TSGRegularization, rawEEGAttention, graphEEGAttention
+from core.layers import rawEEGAttention, graphEEGAttention
 
 K.set_image_data_format('channels_last')
 
@@ -79,8 +80,11 @@ def rawEEGConvNet(nClasses,
                use_bias=False,
                kernel_regularizer=sgl(l1, l21),
                activity_regularizer=tsc(tl1))(s)
-    # s = TSGRegularization(l1, l21, tl1)(s)
     s = BatchNormalization(axis=-1)(s)
+    # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
+    # s = Conv2D(s.shape[3], (1, 1), use_bias=False, kernel_regularizer=tsc(tl1))(s)
+    # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
+    # s = BatchNormalization(axis=-1)(s)
     s = Activation('elu')(s)
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
