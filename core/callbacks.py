@@ -3,6 +3,8 @@ import logging
 import numpy as np
 
 from tensorflow_core.python.keras.callbacks import ModelCheckpoint
+from tensorflow_core.python.keras.callbacks import EarlyStopping
+from tensorflow_core.python.keras.callbacks import Callback
 
 
 class MyModelCheckpoint(ModelCheckpoint):
@@ -24,20 +26,22 @@ class MyModelCheckpoint(ModelCheckpoint):
                          save_freq=save_freq,
                          **kwargs)
         if 'p' in kwargs:
-            self.p = kwargs['p']
+            self.p = float(kwargs['p'])
+            if self.p <= 0. or self.p >= 1.:
+                raise ValueError('`p` must above 0 and below 1.')
         else:
-            self.p = 0.
+            self.p = 0.05
 
         if 'statistic_best' in kwargs:
             self.statistic_best = kwargs['statistic_best']
-            if self.statistic_best:
-                if not isinstance(self.p, float) and self.p >= 0.:
-                    raise ValueError('`p` must be positive float.')
+            if isinstance(self.statistic_best, bool):
+                if not self.statistic_best:
+                    logging.warning('`p` argument is active only when '
+                                    '`statistic_best` == True.')
+            else:
+                raise TypeError('`statistic_best` must be bool.')
         else:
             self.statistic_best = False
-            if self.p:
-                logging.warning('`p` argument is active only when `statistic'
-                                '_best` == True.')
 
         self.acc_op = np.greater
         self.loss_op = np.less
@@ -77,7 +81,8 @@ class MyModelCheckpoint(ModelCheckpoint):
                                     % (epoch + 1, 'val_loss', self.best_loss,
                                        current_loss, self.p, 'val_accuracy',
                                        self.best_acc, current_acc, filepath))
-                            self.best_loss = current_loss
+                            if self.loss_op(current_loss, self.best_loss):
+                                self.best_loss = current_loss
                             self.best_acc = current_acc
                             if self.save_weights_only:
                                 self.model.save_weights(filepath,
@@ -92,26 +97,25 @@ class MyModelCheckpoint(ModelCheckpoint):
                                     'prove from %0.5f' %
                                     (epoch + 1, 'val_loss', self.best_loss,
                                      self.p, 'val_accuracy', self.best_acc))
-                    else:
-                        if self.loss_op(current_loss, self.best_loss):
-                            if self.verbose > 0:
-                                print(
-                                    '\nEpoch %05d: %s improved from %0.5f to %0.5f '
-                                    'significantly in p=%0.2f value, saving model '
-                                    'to %s' %
-                                    (epoch + 1, 'val_loss', self.best_loss,
-                                     current_loss, self.p, filepath))
-                            self.best_loss = current_loss
-                            self.best_acc = current_acc
-                            if self.save_weights_only:
-                                self.model.save_weights(filepath,
-                                                        overwrite=True)
-                            else:
-                                self.model.save(filepath, overwrite=True)
+                    elif self.loss_op(current_loss, self.best_loss):
+                        if self.verbose > 0:
+                            print(
+                                '\nEpoch %05d: %s improved from %0.5f to %0.5f '
+                                'significantly in p=%0.2f value, saving model '
+                                'to %s' %
+                                (epoch + 1, 'val_loss', self.best_loss,
+                                    current_loss, self.p, filepath))
+                        self.best_loss = current_loss
+                        self.best_acc = current_acc
+                        if self.save_weights_only:
+                            self.model.save_weights(filepath,
+                                                    overwrite=True)
                         else:
-                            if self.verbose > 0:
-                                print(
-                                    '\nEpoch %05d: %s did not improve from %0.5f'
+                            self.model.save(filepath, overwrite=True)
+                    else:
+                        if self.verbose > 0:
+                            print(
+                                '\nEpoch %05d: %s did not improve from %0.5f'
                                     % (epoch + 1, 'val_loss', self.best_loss))
             else:
                 current = logs.get(self.monitor)
