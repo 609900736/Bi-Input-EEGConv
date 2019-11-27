@@ -7,9 +7,8 @@ import cv2 as cv
 import numpy as np
 import scipy.io as sio
 
-data = sio.loadmat(
-    os.path.join('data', '4s', 'Train',
-                 'A01T_potential_30_35_1.mat'))['images_average']
+data = sio.loadmat(os.path.join('data', '4s', 'Train',
+                                'A01T_raw_1.mat'))['images_average']
 label = sio.loadmat(os.path.join('data', '4s', 'Train',
                                  'A01T_label.mat'))['classlabel'] - 1
 

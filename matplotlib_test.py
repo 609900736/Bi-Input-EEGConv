@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import RadioButtons, Slider
 
 data = sio.loadmat(os.path.join('data', '4s', 'Train',
-                                'A01T_potential_1.mat'))['images_average']
+                                'A01T_raw_1.mat'))['images_average']
 label = sio.loadmat(os.path.join('data', '4s', 'Train',
                                  'A01T_label.mat'))['classlabel'] - 1
 
@@ -25,7 +25,7 @@ plt.subplots_adjust(bottom=0.2,left=0.3) #调整子图间距
 
 x,y=spv(2,3)                             # 初始化函数
 l,=plt.plot(x,y,color='red')             # 画出该条曲线
-l,=plt.contourf()
+# l,=plt.contourf()
 
 axcolor = 'lightgoldenrodyellow'  # slider的颜色
 om1= plt.axes([0.25, 0.1, 0.65, 0.03], facecolor=axcolor) # 第一slider的位置

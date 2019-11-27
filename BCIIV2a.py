@@ -22,6 +22,7 @@ if __name__ == '__main__':
                   rawGenerator,
                   AllTrain,
                   kFold=5,
+                  shuffle=True,
                   beg=0,
                   end=4,
                   srate=srate,

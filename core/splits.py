@@ -22,21 +22,17 @@ from sklearn.model_selection._split import check_random_state, indexable, _num_s
 
 class AllTrain(_BaseCrossValidator):
     """
-    Random permutation cross-validator
+    Random permutation average-validator
 
     Yields indices to split data all into training sets.
-
-    Note: contrary to other cross-validation strategies, random splits
-    do not guarantee that all folds will be different, although this is
-    still very likely for sizeable datasets.
 
     Parameters
     ----------
     ```txt
     n_splits        : int, default 10
                       Number of splitting iterations.
-    shuffle         : bool, not use, always False
-                      For compatibility.
+    shuffle         : bool, default False
+                      Shuffle permutation.
     random_state    : int, not use
                       For compatibility.
     ```
@@ -97,6 +93,8 @@ class AllTrain(_BaseCrossValidator):
         """
         X, y, groups = indexable(X, y, groups)
         for test, train in super().split(X, y, groups):
+            if self.shuffle:
+                np.random.shuffle(train)
             yield train, test
 
     def get_n_splits(self, X=None, y=None, groups=None):
