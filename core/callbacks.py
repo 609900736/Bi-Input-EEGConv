@@ -76,7 +76,7 @@ class MyModelCheckpoint(ModelCheckpoint):
                             if self.verbose > 0:
                                 print(
                                     '\nEpoch %05d: %s changed from %0.5f to %0.5f '
-                                    'unsignificantly in p=%0.2f value, and %s impr'
+                                    'unsignificantly in p=%0.2f value, but %s impr'
                                     'oved from %0.5f to %0.5f, saving model to %s'
                                     % (epoch + 1, 'val_loss', self.best_loss,
                                        current_loss, self.p, 'val_accuracy',
@@ -92,9 +92,9 @@ class MyModelCheckpoint(ModelCheckpoint):
                         else:
                             if self.verbose > 0:
                                 print(
-                                    '\nEpoch %05d: %s did not change from %0.5f si'
-                                    'gnificantly in p=%0.2f value or %s did not im'
-                                    'prove from %0.5f' %
+                                    '\nEpoch %05d: %s did not improve from %0.5f '
+                                    'significantly in p=%0.2f value and %s did not'
+                                    ' improve from %0.5f' %
                                     (epoch + 1, 'val_loss', self.best_loss,
                                      self.p, 'val_accuracy', self.best_acc))
                     elif self.loss_op(current_loss, self.best_loss):
@@ -104,19 +104,18 @@ class MyModelCheckpoint(ModelCheckpoint):
                                 'significantly in p=%0.2f value, saving model '
                                 'to %s' %
                                 (epoch + 1, 'val_loss', self.best_loss,
-                                    current_loss, self.p, filepath))
+                                 current_loss, self.p, filepath))
                         self.best_loss = current_loss
                         self.best_acc = current_acc
                         if self.save_weights_only:
-                            self.model.save_weights(filepath,
-                                                    overwrite=True)
+                            self.model.save_weights(filepath, overwrite=True)
                         else:
                             self.model.save(filepath, overwrite=True)
                     else:
                         if self.verbose > 0:
                             print(
-                                '\nEpoch %05d: %s did not improve from %0.5f'
-                                    % (epoch + 1, 'val_loss', self.best_loss))
+                                '\nEpoch %05d: %s did not improve from %0.5f' %
+                                (epoch + 1, 'val_loss', self.best_loss))
             else:
                 current = logs.get(self.monitor)
                 if current is None:
