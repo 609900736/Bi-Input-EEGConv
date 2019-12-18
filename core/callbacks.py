@@ -71,7 +71,7 @@ class MyModelCheckpoint(ModelCheckpoint):
                                     ' and val_accuracy available, skipping.')
                 else:
                     if self.loss_op(np.abs(self.best_loss - current_loss),
-                                    current_loss * self.p):
+                                    current_loss * self.p / 2.):
                         if self.acc_op(current_acc, self.best_acc):
                             if self.verbose > 0:
                                 print(

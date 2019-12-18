@@ -3,7 +3,7 @@
 Model BIEEGConv
 
 @author: Boxann John
-@date: 2019/11/07
+@date: 11/07/2019
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -14,8 +14,18 @@ from .core import train
 from .core import utils
 from .core import regularizers
 from .core import generators
+from .core import splits
+from .core import layers
+from .core import callbacks
+from .core import visualization
+
+import BCIIV2a as example
+
 
 __name__ = 'BIEEGConv'
-__all__ = {'models', 'train', 'utils', 'regularizers', 'generators'}
+__all__ = {
+    'models', 'train', 'utils', 'regularizers', 'generators', 'splits',
+    'layers', 'callbacks', 'visualization'
+}
 
 __version__ = '0.0.1-rc'

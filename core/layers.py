@@ -1,56 +1,47 @@
 # coding:utf-8
-from tensorflow_core.python.keras.layers import Attention
+from tensorflow_core.python.ops import math_ops, array_ops
+from tensorflow_core.python.keras.layers.advanced_activations import Softmax
+from tensorflow_core.python.keras.layers.core import Dense
+from tensorflow_core.python.keras.layers.dense_attention import Attention
+from tensorflow_core.python.keras.layers.merge import Multiply
 from tensorflow_core.python.keras.engine.base_layer import Layer
+from tensorflow_core.python.keras.engine.training import Model
+from tensorflow_core.python.keras import backend as K
 from core.regularizers import TSG as _TSG
 
 
 # TODO: Construct attention layers
 class BaseAttention(Layer):
-    def __init__(self,
-                 trainable=True,
-                 name=None,
-                 dtype=None,
-                 dynamic=False,
-                 **kwargs):
-        super().__init__(trainable=trainable,
-                         name=name,
-                         dtype=dtype,
-                         dynamic=dynamic,
-                         **kwargs)
+    def __init__(self, axis=-1, **kwargs):
+        super().__init__(**kwargs)
+        self.supports_masking = True
+        self.axis = axis
 
     def build(self, input_shape):
-        return super().build(input_shape)
+        super().build(input_shape)
 
-    def call(self, inputs, mask=None):
-        return super().call(inputs, mask)
+    def call(self, inputs):
+        softmax = K.softmax(inputs, self.axis)
+        return math_ops.mul(inputs, softmax)
 
     def compute_output_shape(self, input_shape):
         return input_shape
 
     def get_config(self):
-        config = {}
+        config = {'axis':self.axis, 'supports_masking':self.supports_masking}
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
 class rawEEGAttention(BaseAttention):
-    def __init__(self,
-                 trainable=True,
-                 name=None,
-                 dtype=None,
-                 dynamic=False,
-                 **kwargs):
-        super().__init__(trainable=trainable,
-                         name=name,
-                         dtype=dtype,
-                         dynamic=dynamic,
-                         **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def build(self, input_shape):
-        return super().build(input_shape)
+        super().build(input_shape)
 
-    def call(self, inputs, mask=None):
-        return super().call(inputs, mask)
+    def call(self, inputs):
+        return super().call(inputs)
 
     def compute_output_shape(self, input_shape):
         return input_shape
@@ -62,20 +53,71 @@ class rawEEGAttention(BaseAttention):
 
 
 class graphEEGAttention(BaseAttention):
-    def __init__(self,
-                 trainable=True,
-                 name=None,
-                 dtype=None,
-                 dynamic=False,
-                 **kwargs):
-        super().__init__(trainable=trainable,
-                         name=name,
-                         dtype=dtype,
-                         dynamic=dynamic,
-                         **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def build(self, input_shape):
-        return super().build(input_shape)
+        super().build(input_shape)
+
+    def call(self, inputs, mask=None):
+        return super().call(inputs, mask)
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+    def get_config(self):
+        config = {}
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+class BaseSelfAttention(BaseAttention):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        super().build(input_shape)
+
+    def call(self, inputs, mask=None):
+        return super().call(inputs, mask)
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+    def get_config(self):
+        config = {}
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))\
+
+    def _relationFunc(self):
+        pass
+
+
+class rawEEGSelfAttention(BaseSelfAttention):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        super().build(input_shape)
+
+    def call(self, inputs, mask=None):
+        return super().call(inputs, mask)
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+    def get_config(self):
+        config = {}
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+class graphEEGSelfAttention(BaseSelfAttention):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def build(self, input_shape):
+        super().build(input_shape)
 
     def call(self, inputs, mask=None):
         return super().call(inputs, mask)

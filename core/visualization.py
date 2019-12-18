@@ -11,7 +11,7 @@ if __name__ == '__main__':
     print(pywt.ContinuousWavelet('gaus8'))
     x = np.linspace(0, 4, 1000)
     y = (1 + 0.5 * np.cos(2 * np.pi * 5 * x)
-         ) * np.cos(2 * np.pi * 50 * x + 0.5 * np.sin(2 * np.pi * 10 * x))
+         ) * np.cos(2 * np.pi * 50 * x)
     plt.plot(x, y)  # doctest: +SKIP
     coef, freqs = pywt.cwt(y,
                            np.arange(1, 129),
