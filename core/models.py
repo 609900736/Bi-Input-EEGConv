@@ -73,7 +73,7 @@ def rawEEGConvNet(nClasses,
                         depth_multiplier=D,
                         depthwise_constraint=max_norm(1.))(s)
     s = BatchNormalization(axis=-1)(s)
-    s = Activation('selu')(s)
+    s = Activation('elu')(s)
     s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
     s = Conv2D(F2, (1, 1),
@@ -86,7 +86,7 @@ def rawEEGConvNet(nClasses,
     # s = Conv2D(s.shape[3], (1, 1), use_bias=False, kernel_regularizer=tsc(tl1))(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
     # s = BatchNormalization(axis=-1)(s)
-    s = Activation('selu')(s)
+    s = Activation('elu')(s)
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
