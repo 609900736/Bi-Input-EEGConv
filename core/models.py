@@ -79,7 +79,8 @@ def rawEEGConvNet(nClasses,
     s = Conv2D(F2, (1, 1),
                use_bias=False,
                kernel_regularizer=sgl(l1, l21),
-               activity_regularizer=tsc(tl1))(s)
+               #activity_regularizer=tsc(tl1),
+               )(s)
     s = BatchNormalization(axis=-1)(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
     # s = Conv2D(s.shape[3], (1, 1), use_bias=False, kernel_regularizer=tsc(tl1))(s)

@@ -1,5 +1,5 @@
 # coding:utf-8
-from tensorflow_core.python.ops import math_ops, array_ops
+from tensorflow.python.ops import math_ops, array_ops
 from tensorflow_core.python.keras.layers.advanced_activations import Softmax
 from tensorflow_core.python.keras.layers.core import Dense
 from tensorflow_core.python.keras.layers.dense_attention import Attention
