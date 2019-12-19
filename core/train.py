@@ -120,10 +120,10 @@ class crossValidate(object):
     Parameters
     ----------
     ```txt
-    built_in        : function, Create Training model which need to cross validate.
+    built_fn        : function, Create Training model which need to cross validate.
                       Please use `create_` at the begining of function name, 
                       like `create_modelname`.
-    dataGent        : class, Generate data for @built_in, shapes (n_trails, ...). 
+    dataGent        : class, Generate data for @built_fn, shapes (n_trails, ...). 
                       It should discriminate data and label.
                       More details see core.generators.
     splitMethod     : class, Support split methods from module sklearn.model_selection.
@@ -136,13 +136,14 @@ class crossValidate(object):
                       number generator; If None, the random number generator is the 
                       RandomState instance used by np.random. Used when shuffle == True.
     subs            : int, Number of subjects.
-    isCropped       : bool, Switch of cropped training.
+    cropping        : bool, Switch of cropped training. Default = False.
+    normalizing     : bool, Switch of normalizing data. Default = True.
     batch_size      : int, Batch size.
     epochs          : int, Training epochs.
     patience        : int, Early stopping patience.
     verbose         : int, One of 0, 1 and 2.
-    *a, *args       : tuple, Parameters used by @dataGent and @built_in respectively
-    **kw, **kwargs  : dict, Parameters used by @dataGent and @built_in respectively, 
+    *a, *args       : tuple, Parameters used by @dataGent and @built_fn respectively
+    **kw, **kwargs  : dict, Parameters used by @dataGent and @built_fn respectively, 
                       **kw should include parameters called `beg`, `end` and `srate`.
     ```
 
@@ -160,7 +161,7 @@ class crossValidate(object):
 
     def create_model(Samples, *args, **kwargs):
         ...
-        return acc
+        return keras_model
 
     class dataGenerator:
         def __init__(self, *a, **kw, beg=0, end=4, srate=250):
@@ -176,7 +177,7 @@ class crossValidate(object):
         ...
     ...
     avg_acc = crossValidate(
-                model, 
+                create_model, 
                 dataGenerator, 
                 beg=0,
                 end=4,
@@ -193,7 +194,7 @@ class crossValidate(object):
     More details to see the codes.
     '''
     def __init__(self,
-                 built_in,
+                 built_fn,
                  dataGent,
                  splitMethod=StratifiedKFold,
                  beg=0,
@@ -203,14 +204,15 @@ class crossValidate(object):
                  shuffle=False,
                  random_state=None,
                  subs=9,
-                 isCropped=False,
+                 cropping=False,
+                 normalizing=True,
                  batch_size=10,
                  epochs=300,
                  patience=100,
                  verbose=2,
                  *args,
                  **kwargs):
-        self.built_in = built_in
+        self.built_fn = built_fn
         self.dataGent = dataGent(beg=beg,
                                  end=end,
                                  srate=srate,
@@ -224,16 +226,17 @@ class crossValidate(object):
         self.shuffle = shuffle
         self.random_state = random_state
         self.subs = subs
-        self.isCropped = isCropped
+        self.cropping = cropping
+        self.normalizing = normalizing
         self.batch_size = batch_size
         self.epochs = epochs
         self.patience = patience
         self.verbose = verbose
         self.Samples = math.ceil(self.end * self.srate - self.beg * self.srate)
-        self.modelstr = built_in.__name__[7:]
+        self.modelstr = built_fn.__name__[7:]
 
     def __call__(self, *args, **kwargs):
-        if self.isCropped:
+        if self.cropping:
             gent = self._read_cropped_data
             pass
         else:
@@ -246,7 +249,7 @@ class crossValidate(object):
             os.makedirs('result')
         validation_name = 'Cross Validation'
 
-        model = self.built_in(*args, **kwargs, Samples=self.Samples)
+        model = self.built_fn(*args, **kwargs, Samples=self.Samples)
         # save initial weights
         model.save_weights(self.modelstr + '.h5')
 
@@ -282,6 +285,9 @@ class crossValidate(object):
                     data['y_val'] = data['y_test']
                     if k == 1:
                         validation_name = 'Average Validation'
+
+                if self.normalizing:
+                    data = self._normalize(data)
 
                 history = model.fit(
                     x=data['x_train'],
@@ -337,7 +343,7 @@ class crossValidate(object):
                    self.shuffle, self.random_state, self.subs))
 
     def setConfig(self,
-                  built_in,
+                  built_fn,
                   dataGent,
                   splitMethod=StratifiedKFold,
                   beg=0,
@@ -347,14 +353,15 @@ class crossValidate(object):
                   shuffle=False,
                   random_state=None,
                   subs=9,
-                  isCropped=False,
+                  cropping=False,
+                  normalizing=True,
                   batch_size=10,
                   epochs=300,
                   patience=100,
                   verbose=2,
                   *args,
                   **kwargs):
-        self.built_in = built_in
+        self.built_fn = built_fn
         self.dataGent = dataGent(*args,
                                  **kwargs,
                                  beg=beg,
@@ -368,13 +375,31 @@ class crossValidate(object):
         self.shuffle = shuffle
         self.random_state = random_state
         self.subs = subs
-        self.isCropped = isCropped
+        self.cropping = cropping
+        self.normalizing = normalizing
         self.batch_size = batch_size
         self.epochs = epochs
         self.patience = patience
         self.verbose = verbose
         self.Samples = math.ceil(self.end * self.srate - self.beg * self.srate)
-        self.modelstr = built_in.__name__[7:]
+        self.modelstr = built_fn.__name__[7:]
+
+    def _normalize(self, data: dict):
+        '''normalizing on each trial'''
+        meta = ['x_train', 'x_test', 'x_val']
+        for s in meta:
+            if not s in data:
+                raise ValueError('Wrong using crossValidate._normalize()')
+
+        for s in meta:
+            temp = data[s]
+            for k in range(temp.shape[0]):
+                mu = np.nanmean(temp[k])
+                std = np.nanstd(temp[k])
+                temp[k] = (temp[k] - mu) / std
+            data[s] = temp
+
+        return data
 
     def _read_data(self, subject):
         '''

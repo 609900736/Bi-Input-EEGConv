@@ -30,6 +30,7 @@ from tensorflow_core.python.keras.constraints import max_norm, \
 from tensorflow_core.python.keras import backend as K
 
 from core.regularizers import l_1, l_2, l1_l2, l2_1, tsc, sgl, tsg
+from core.constraints import std_norm
 from core.layers import rawEEGAttention, graphEEGAttention
 
 K.set_image_data_format('channels_last')
@@ -51,7 +52,8 @@ def rawEEGConvNet(nClasses,
                   dtype=tf.float32,
                   dropoutType='Dropout'):
     """
-    for weight reusing
+    Interpretability improvement of EEGNet. Using LecunNorm as initializer, 
+    and SELU as activation.
 
     see BIEEGConvNet
     """
@@ -66,31 +68,41 @@ def rawEEGConvNet(nClasses,
                          'AlphaDropout or Dropout, passed as a string.')
     # Learn from raw EEG signals
     _input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
-    s = Conv2D(F1, (1, kernLength), padding='same', use_bias=False)(_input_s)
+    s = Conv2D(F1, (1, kernLength),
+               padding='same',
+               use_bias=False,
+               kernel_initializer='lecun_normal',
+               kernel_constraint=std_norm())(_input_s)
     s = BatchNormalization(axis=-1)(s)
     s = DepthwiseConv2D((Chans, 1),
                         use_bias=False,
                         depth_multiplier=D,
-                        depthwise_constraint=max_norm(1.))(s)
+                        depthwise_constraint=std_norm(),
+                        depthwise_initializer='lecun_normal')(s)
     s = BatchNormalization(axis=-1)(s)
-    s = Activation('elu')(s)
+    s = Activation('selu')(s)
     s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
-    s = Conv2D(F2, (1, 1),
-               use_bias=False,
-               kernel_regularizer=sgl(l1, l21),
-               #activity_regularizer=tsc(tl1),
-               )(s)
+    s = Conv2D(
+        F2,
+        (1, 1),
+        use_bias=False,
+        kernel_constraint=std_norm(),
+        kernel_regularizer=sgl(l1, l21),
+        #activity_regularizer=tsc(tl1),
+        kernel_initializer='lecun_normal')(s)
     s = BatchNormalization(axis=-1)(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
     # s = Conv2D(s.shape[3], (1, 1), use_bias=False, kernel_regularizer=tsc(tl1))(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
     # s = BatchNormalization(axis=-1)(s)
-    s = Activation('elu')(s)
+    s = Activation('selu')(s)
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
-    dense = Dense(nClasses, kernel_constraint=max_norm(norm_rate))(flatten)
+    dense = Dense(nClasses,
+                  kernel_initializer='lecun_normal',
+                  kernel_constraint=std_norm())(flatten)
     _output_s = Activation('softmax', name='softmax')(dense)
 
     return Model(inputs=_input_s, outputs=_output_s)

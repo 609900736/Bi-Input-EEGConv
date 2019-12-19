@@ -23,9 +23,10 @@ if __name__ == '__main__':
                   AllTrain,
                   kFold=5,
                   shuffle=True,
+                  normalizing=True,
                   beg=0,
                   end=4,
                   srate=srate,
                   epochs=1200,
-                  patience=300)(4, F=16, D=10, Ns=20, tl1=1e-5)
+                  patience=300)(4, F=16, D=10, Ns=20)
     pass

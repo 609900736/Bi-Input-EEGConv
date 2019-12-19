@@ -9,7 +9,6 @@ from tensorflow_core.python.keras.regularizers import Regularizer
 from tensorflow_core.python.keras.regularizers import l1 as l_1
 from tensorflow_core.python.keras.regularizers import l2 as l_2
 from tensorflow_core.python.keras.regularizers import l1_l2
-from tensorflow_core.python.keras.layers import Layer
 from tensorflow_core.python.keras import backend as K
 
 
@@ -55,7 +54,7 @@ class TSG(Regularizer):
                     math_ops.abs(ntf[n, :, :]))
             if self.l21:
                 regularization += self.l21 * math_ops.reduce_sum(
-                    math_ops.mul(
+                    math_ops.multiply(
                         math_ops.sqrt(
                             math_ops.to_float(array_ops.shape(ntf)[1])),
                         math_ops.sqrt(
@@ -63,7 +62,7 @@ class TSG(Regularizer):
                                                 1))))
             if self.tl1:
                 regularization += self.tl1 * math_ops.reduce_sum(
-                    math_ops.abs(math_ops.sub(ntf[n, :-1, :], ntf[n, 1:, :])))
+                    math_ops.abs(math_ops.subtract(ntf[n, :-1, :], ntf[n, 1:, :])))
         return regularization
 
     def get_config(self):
@@ -86,7 +85,7 @@ def tsc(tl1=0.01):
     return TSG(tl1=tl1)
 
 
-# l1 + l21 = sparse group lasso
+# l1 + l2_1 = sparse group lasso
 def sgl(l1=0.01, l21=0.01):
     '''sparse group lasso'''
     return TSG(l1=l1, l21=l21)
