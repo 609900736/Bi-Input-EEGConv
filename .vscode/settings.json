@@ -1,9 +1,9 @@
 {
-    "python.pythonPath": "C:\\VisualStudio\\Shared\\Anaconda3_64\\envs\\tensorflow-gpu\\python.exe",
+    "python.pythonPath": "E:\\VisualStudio\\Share\\Anaconda3\\envs\\tensorflow2\\python.exe",
     "python.autoComplete.addBrackets": true,
     "python.autoComplete.extraPaths": [
-        "C:\\VisualStudio\\Shared\\Anaconda3_64\\envs\\tensorflow-gpu",
-        "C:\\VisualStudio\\Shared\\Anaconda3_64\\envs\\tensorflow-gpu\\Lib\\site-packages"
+        "E:\\VisualStudio\\Share\\Anaconda3\\envs\\tensorflow2",
+        "E:\\VisualStudio\\Share\\Anaconda3\\envs\\tensorflow2\\Lib\\site-packages"
     ],
     "terminal.integrated.rendererType": "dom"
 }
