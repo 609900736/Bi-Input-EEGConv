@@ -45,14 +45,14 @@ def rawEEGConvNet(nClasses,
                   F1=9,
                   D=4,
                   F2=32,
-                  l1=0.001,
-                  l21=0.001,
-                  tl1=0.001,
+                  l1=5e-4,
+                  l21=5e-4,
+                  tl1=1e-5,
                   norm_rate=0.25,
                   dtype=tf.float32,
-                  dropoutType='Dropout'):
+                  dropoutType='AlphaDropout'):
     """
-    Interpretability improvement of EEGNet. Using LecunNorm as initializer, 
+    Interpretability improvement of EEGNet. Using LecunNormal as initializer, 
     and SELU as activation.
 
     see BIEEGConvNet
@@ -83,14 +83,40 @@ def rawEEGConvNet(nClasses,
     s = Activation('selu')(s)
     s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
-    s = Conv2D(
-        F2,
-        (1, 1),
-        use_bias=False,
-        kernel_constraint=std_norm(),
-        kernel_regularizer=sgl(l1, l21),
-        #activity_regularizer=tsc(tl1),
-        kernel_initializer='lecun_normal')(s)
+    if tl1:
+        if l1 or l21:
+            s = Conv2D(
+                F2,
+                (1, 1),
+                use_bias=False,
+                kernel_constraint=std_norm(),
+                kernel_regularizer=sgl(l1, l21),
+                activity_regularizer=tsc(tl1),
+                kernel_initializer='lecun_normal')(s)
+        else:
+            s = Conv2D(
+                F2,
+                (1, 1),
+                use_bias=False,
+                kernel_constraint=std_norm(),
+                activity_regularizer=tsc(tl1),
+                kernel_initializer='lecun_normal')(s)
+    else:
+        if l1 or l21:
+            s = Conv2D(
+                F2,
+                (1, 1),
+                use_bias=False,
+                kernel_constraint=std_norm(),
+                kernel_regularizer=sgl(l1, l21),
+                kernel_initializer='lecun_normal')(s)
+        else:
+            s = Conv2D(
+                F2,
+                (1, 1),
+                use_bias=False,
+                kernel_constraint=std_norm(),
+                kernel_initializer='lecun_normal')(s)
     s = BatchNormalization(axis=-1)(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
     # s = Conv2D(s.shape[3], (1, 1), use_bias=False, kernel_regularizer=tsc(tl1))(s)

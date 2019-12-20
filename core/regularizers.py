@@ -4,7 +4,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow.python.ops import math_ops, array_ops
 from tensorflow_core.python.keras.regularizers import Regularizer
 from tensorflow_core.python.keras.regularizers import l1 as l_1
 from tensorflow_core.python.keras.regularizers import l2 as l_2
@@ -41,28 +40,24 @@ class TSG(Regularizer):
             return K.constant(0.)
         regularization = 0.
 
-        if array_ops.rank(x) == 4:  # shape (?, 1, Timesteps, Features)
-            ntf = math_ops.reduce_sum(x, 1)  # shape (?, Timesteps, Features)
-        elif array_ops.rank(x) == 5:  # shape (?, 1, 1, Inputs, Outputs)
-            ntf = math_ops.reduce_sum(x, [1, 2])  # shape (?, Inputs, Outputs)
+        if tf.rank(x) == 4:  # shape (?, 1, Timesteps, Features)
+            ntf = tf.reduce_sum(x, 1)  # shape (?, Timesteps, Features)
+        elif tf.rank(x) == 5:  # shape (?, 1, 1, Inputs, Outputs)
+            ntf = tf.reduce_sum(x, [1, 2])  # shape (?, Inputs, Outputs)
         else:
             ntf = x  # shape (?, Inputs, Outputs)
 
-        for n in math_ops.range(array_ops.shape(ntf)[0]):
+        for n in tf.range(tf.shape(ntf)[0]):
             if self.l1:
-                regularization += self.l1 * math_ops.reduce_sum(
-                    math_ops.abs(ntf[n, :, :]))
+                regularization += self.l1 * tf.reduce_sum(tf.abs(ntf[n, :, :]))
             if self.l21:
-                regularization += self.l21 * math_ops.reduce_sum(
-                    math_ops.multiply(
-                        math_ops.sqrt(
-                            math_ops.to_float(array_ops.shape(ntf)[1])),
-                        math_ops.sqrt(
-                            math_ops.reduce_sum(math_ops.square(ntf[n, :, :]),
-                                                1))))
+                regularization += self.l21 * tf.reduce_sum(
+                    tf.multiply(
+                        tf.sqrt(tf.cast(tf.shape(ntf)[1], tf.float32)),
+                        tf.sqrt(tf.reduce_sum(tf.square(ntf[n, :, :]), 1))))
             if self.tl1:
-                regularization += self.tl1 * math_ops.reduce_sum(
-                    math_ops.abs(math_ops.subtract(ntf[n, :-1, :], ntf[n, 1:, :])))
+                regularization += self.tl1 * tf.reduce_sum(
+                    tf.abs(tf.subtract(ntf[n, :-1, :], ntf[n, 1:, :])))
         return regularization
 
     def get_config(self):
