@@ -26,7 +26,9 @@ class StdNorm(Constraint):
         std = math_ops.reduce_std(w, axis=self.axis, keepdims=True)
         mu = math_ops.multiply(array_ops.ones_like(w), mu)
         std = math_ops.multiply(array_ops.ones_like(w), std)
-        return math_ops.divide(math_ops.subtract(w, mu), std)
+        return math_ops.divide(
+            math_ops.multiply(math_ops.subtract(w, mu),
+                              math_ops.sqrt(array_ops.shape(w)[-2])), std)
 
     def get_config(self):
         return {'axis': self.axis}
