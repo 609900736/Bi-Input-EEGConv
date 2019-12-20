@@ -1,9 +1,0 @@
-{
-    "python.pythonPath": "E:\\VisualStudio\\Share\\Anaconda3\\envs\\tensorflow2\\python.exe",
-    "python.autoComplete.addBrackets": true,
-    "python.autoComplete.extraPaths": [
-        "E:\\VisualStudio\\Share\\Anaconda3\\envs\\tensorflow2",
-        "E:\\VisualStudio\\Share\\Anaconda3\\envs\\tensorflow2\\Lib\\site-packages"
-    ],
-    "terminal.integrated.rendererType": "dom"
-}
