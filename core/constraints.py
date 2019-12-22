@@ -9,21 +9,25 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_core.python.keras.constraints import Constraint
-from tensorflow_core.python.keras import backend as K
+from tensorflow.python.keras.constraints import Constraint
+from tensorflow.python.keras import backend as K
 
 
 class StdNorm(Constraint):
     def __init__(self, axis=None):
         self.axis = axis
 
+    # @tf.function
     def __call__(self, w):
-        k = tf.shape(w)[-2]
-        mu = tf.reduce_mean(w, axis=self.axis, keepdims=True)
-        std = tf.reduce_std(w, axis=self.axis, keepdims=True)
+        size = tf.shape(w, out_type=tf.float32)
+        k = tf.constant(1., tf.float32)
+        for i in range(size.shape[0] - 1):
+            k = tf.multiply(k, size[i])
+        mu = tf.math.reduce_mean(w, axis=self.axis, keepdims=True)
+        std = tf.math.reduce_std(w, axis=self.axis, keepdims=True)
         mu = tf.multiply(tf.ones_like(w), mu)
         std = tf.multiply(tf.ones_like(w), std)
-        return tf.divide(tf.multiply(tf.subtract(w, mu), tf.sqrt(k)), std)
+        return tf.divide(tf.subtract(w, mu), tf.multiply(std, tf.sqrt(k)))
 
     def get_config(self):
         return {'axis': self.axis}

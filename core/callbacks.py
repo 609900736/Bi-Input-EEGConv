@@ -2,9 +2,9 @@
 import logging
 import numpy as np
 
-from tensorflow_core.python.keras.callbacks import ModelCheckpoint
-from tensorflow_core.python.keras.callbacks import EarlyStopping
-from tensorflow_core.python.keras.callbacks import Callback
+from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.callbacks import EarlyStopping
+from tensorflow.python.keras.callbacks import Callback
 
 
 class MyModelCheckpoint(ModelCheckpoint):

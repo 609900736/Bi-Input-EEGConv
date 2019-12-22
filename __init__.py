@@ -18,6 +18,7 @@ from .core import splits
 from .core import layers
 from .core import callbacks
 from .core import visualization
+from .core import constraints
 
 import BCIIV2a as example
 

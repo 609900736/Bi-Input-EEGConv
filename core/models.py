@@ -2,32 +2,32 @@
 
 import tensorflow as tf
 
-from tensorflow_core.python.keras import Input, Model
-from tensorflow_core.python.keras.layers import Dense, \
-                                                Conv2D, \
-                                                Conv3D, \
-                                                Concatenate, \
-                                                BatchNormalization, \
-                                                AveragePooling2D, \
-                                                AveragePooling3D, \
-                                                MaxPooling2D, \
-                                                MaxPooling3D, \
-                                                SeparableConv2D, \
-                                                DepthwiseConv2D, \
-                                                Activation, \
-                                                SpatialDropout2D, \
-                                                SpatialDropout3D, \
-                                                Dropout, \
-                                                AlphaDropout, \
-                                                Flatten, \
-                                                Lambda, \
-                                                Multiply, \
-                                                Reshape, \
-                                                Add
-from tensorflow_core.python.keras.constraints import max_norm, \
-                                                     min_max_norm, \
-                                                     unit_norm
-from tensorflow_core.python.keras import backend as K
+from tensorflow.python.keras import Input, Model
+from tensorflow.python.keras.layers import Dense, \
+                                           Conv2D, \
+                                           Conv3D, \
+                                           Concatenate, \
+                                           BatchNormalization, \
+                                           AveragePooling2D, \
+                                           AveragePooling3D, \
+                                           MaxPooling2D, \
+                                           MaxPooling3D, \
+                                           SeparableConv2D, \
+                                           DepthwiseConv2D, \
+                                           Activation, \
+                                           SpatialDropout2D, \
+                                           SpatialDropout3D, \
+                                           Dropout, \
+                                           AlphaDropout, \
+                                           Flatten, \
+                                           Lambda, \
+                                           Multiply, \
+                                           Reshape, \
+                                           Add
+from tensorflow.python.keras.constraints import max_norm, \
+                                                min_max_norm, \
+                                                unit_norm
+from tensorflow.python.keras import backend as K
 
 from core.regularizers import l_1, l_2, l1_l2, l2_1, tsc, sgl, tsg
 from core.constraints import std_norm
@@ -45,9 +45,9 @@ def rawEEGConvNet(nClasses,
                   F1=9,
                   D=4,
                   F2=32,
-                  l1=5e-4,
-                  l21=5e-4,
-                  tl1=1e-5,
+                  l1=1e-3,
+                  l21=1e-3,
+                  tl1=5e-6,
                   norm_rate=0.25,
                   dtype=tf.float32,
                   dropoutType='AlphaDropout'):
@@ -68,18 +68,23 @@ def rawEEGConvNet(nClasses,
                          'AlphaDropout or Dropout, passed as a string.')
     # Learn from raw EEG signals
     _input_s = Input(shape=(Chans, Samples, Colors), dtype=dtype)
-    s = Conv2D(F1, (1, kernLength),
-               padding='same',
-               use_bias=False,
-               kernel_initializer='lecun_normal',
-               kernel_constraint=std_norm())(_input_s)
-    s = BatchNormalization(axis=-1)(s)
-    s = DepthwiseConv2D((Chans, 1),
-                        use_bias=False,
-                        depth_multiplier=D,
-                        depthwise_constraint=std_norm(),
-                        depthwise_initializer='lecun_normal')(s)
-    s = BatchNormalization(axis=-1)(s)
+    s = Conv2D(
+        F1,
+        (1, kernLength),
+        padding='same',
+        use_bias=False,
+        kernel_initializer='lecun_normal',
+        kernel_constraint=std_norm(),
+    )(_input_s)
+    # s = BatchNormalization(axis=-1)(s)
+    s = DepthwiseConv2D(
+        (Chans, 1),
+        use_bias=False,
+        depth_multiplier=D,
+        depthwise_constraint=std_norm(),
+        # depthwise_constraint=max_norm(1.),
+        depthwise_initializer='lecun_normal')(s)
+    # s = BatchNormalization(axis=-1)(s)
     s = Activation('selu')(s)
     s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
@@ -117,7 +122,7 @@ def rawEEGConvNet(nClasses,
                 use_bias=False,
                 kernel_constraint=std_norm(),
                 kernel_initializer='lecun_normal')(s)
-    s = BatchNormalization(axis=-1)(s)
+    # s = BatchNormalization(axis=-1)(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
     # s = Conv2D(s.shape[3], (1, 1), use_bias=False, kernel_regularizer=tsc(tl1))(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
@@ -126,9 +131,12 @@ def rawEEGConvNet(nClasses,
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
-    dense = Dense(nClasses,
-                  kernel_initializer='lecun_normal',
-                  kernel_constraint=std_norm())(flatten)
+    dense = Dense(
+        nClasses,
+        kernel_initializer='lecun_normal',
+        # kernel_constraint=std_norm(),
+        kernel_constraint=max_norm(norm_rate),
+    )(flatten)
     _output_s = Activation('softmax', name='softmax')(dense)
 
     return Model(inputs=_input_s, outputs=_output_s)

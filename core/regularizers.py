@@ -4,11 +4,11 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_core.python.keras.regularizers import Regularizer
-from tensorflow_core.python.keras.regularizers import l1 as l_1
-from tensorflow_core.python.keras.regularizers import l2 as l_2
-from tensorflow_core.python.keras.regularizers import l1_l2
-from tensorflow_core.python.keras import backend as K
+from tensorflow.python.keras.regularizers import Regularizer
+from tensorflow.python.keras.regularizers import l1 as l_1
+from tensorflow.python.keras.regularizers import l2 as l_2
+from tensorflow.python.keras.regularizers import l1_l2
+from tensorflow.python.keras import backend as K
 
 
 class TSG(Regularizer):

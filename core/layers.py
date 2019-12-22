@@ -1,12 +1,13 @@
 # coding:utf-8
-from tensorflow.python.ops import math_ops, array_ops
-from tensorflow_core.python.keras.layers.advanced_activations import Softmax
-from tensorflow_core.python.keras.layers.core import Dense
-from tensorflow_core.python.keras.layers.dense_attention import Attention
-from tensorflow_core.python.keras.layers.merge import Multiply
-from tensorflow_core.python.keras.engine.base_layer import Layer
-from tensorflow_core.python.keras.engine.training import Model
-from tensorflow_core.python.keras import backend as K
+import tensorflow as tf
+from tensorflow.python.keras.layers.advanced_activations import Softmax
+from tensorflow.python.keras.layers.core import Dense
+from tensorflow.python.keras.layers.dense_attention import Attention
+from tensorflow.python.keras.layers.merge import Multiply
+from tensorflow.python.keras.engine.base_layer import Layer
+from tensorflow.python.keras.engine.training import Model
+from tensorflow.python.keras import backend as K
+
 from core.regularizers import TSG as _TSG
 
 
@@ -22,7 +23,7 @@ class BaseAttention(Layer):
 
     def call(self, inputs):
         softmax = K.softmax(inputs, self.axis)
-        return math_ops.mul(inputs, softmax)
+        return tf.multiply(inputs, softmax)
 
     def compute_output_shape(self, input_shape):
         return input_shape

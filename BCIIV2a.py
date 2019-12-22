@@ -10,7 +10,7 @@ from core.train import create_EEGNet, create_rawEEGConvNet, create_graphEEGConvN
 from core.generators import rawGenerator, graphGenerator
 from core.splits import StratifiedKFold, AllTrain
 
-from tensorflow_core.python.keras import backend as K
+from tensorflow.python.keras import backend as K
 
 
 K.set_image_data_format('channels_last')
