@@ -45,7 +45,7 @@ class TSG(Regularizer):
         else:
             ntf = x  # shape (?, Inputs, Outputs)
 
-        for n in range(tf.shape(ntf)[0]):
+        for n in range(ntf.shape[0]):
             if self.l1:
                 regularization += self.l1 * tf.reduce_sum(tf.abs(ntf[n, :, :]))
             if self.l21:
