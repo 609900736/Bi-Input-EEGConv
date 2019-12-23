@@ -10,7 +10,7 @@ This is the Repository of Bi-Input-EEGConv for experiment. Bi-Input-EEGConv is a
 
 ### Requirement
 
-- Python == 3.6
+- Python >= 3.6
 - tensorflow-gpu >= 2.0.0
 - scikit-learn >= 0.21.3
 - scipy >= 1.3.1
@@ -20,7 +20,7 @@ This is the Repository of Bi-Input-EEGConv for experiment. Bi-Input-EEGConv is a
 - hdf5 >= 1.10.4
 - h5py >= 2.9.0
 - matplotlib >= 3.1.1
-- opencv-contrib-python >= 4.1.1.26
+- opencv-contrib-python >= 4.1.1.26 (pip)
 - graphviz >= 2.38
 
 Recommend to use conda environment.
@@ -41,3 +41,5 @@ import BIEEGConv as bieeg
 5. ~~rawEEGConvNet(16,10,20) with different sparse parameters and 5-fold average validation~~
 6. adding attention method
 7. using cropped training
+8. graphEEGConvNet
+9. BIEEGConvNet
