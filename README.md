@@ -4,7 +4,7 @@ This is the Repository of Bi-Input-EEGConv for experiment. Bi-Input-EEGConv is a
 
 ## Dataset
 
-- [BCI Competition IV 2a](http://www.bbci.de/competition/iv/)
+- [BCI Competition IV 2a](http://www.bbci.de/competition/iv/#dataset2a)
 
 ## Usage
 
@@ -39,5 +39,5 @@ import BIEEGConv as bieeg
 3. ~~EEGNet(16,4) with 5-fold average validation~~
 4. ~~TSGEEGNet(16,4) with different sparse parameters and 5-fold average validation~~
 5. ~~rawEEGConvNet(16,10,20) with different sparse parameters and 5-fold average validation~~
-6. using cropped training
-7. adding attention method
+6. adding attention method
+7. using cropped training
