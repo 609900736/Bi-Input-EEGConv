@@ -30,14 +30,17 @@ class MyModelCheckpoint(ModelCheckpoint):
             if self.p <= 0. or self.p >= 1.:
                 raise ValueError('`p` must above 0 and below 1.')
         else:
-            self.p = 0.05
+            self.p = 0.
 
         if 'statistic_best' in kwargs:
             self.statistic_best = kwargs['statistic_best']
             if isinstance(self.statistic_best, bool):
-                if not self.statistic_best:
+                if not self.statistic_best and self.p:
                     logging.warning('`p` argument is active only when '
-                                    '`statistic_best` == True.')
+                                    '`statistic_best` = True.')
+                if not save_best_only:
+                    logging.warning('`statistic_best` argument is active'
+                                    ' only when `save_best_only` = True.')
             else:
                 raise TypeError('`statistic_best` must be bool.')
         else:
@@ -76,8 +79,8 @@ class MyModelCheckpoint(ModelCheckpoint):
                             if self.verbose > 0:
                                 print(
                                     '\nEpoch %05d: %s changed from %0.5f to %0.5f '
-                                    'unsignificantly in p=%0.2f value, but %s impr'
-                                    'oved from %0.5f to %0.5f, saving model to %s'
+                                    'unsignificantly with p = %0.2f, but %s improved'
+                                    ' from %0.5f to %0.5f, saving model to %s'
                                     % (epoch + 1, 'val_loss', self.best_loss,
                                        current_loss, self.p, 'val_accuracy',
                                        self.best_acc, current_acc, filepath))
@@ -93,7 +96,7 @@ class MyModelCheckpoint(ModelCheckpoint):
                             if self.verbose > 0:
                                 print(
                                     '\nEpoch %05d: %s did not improve from %0.5f '
-                                    'significantly in p=%0.2f value and %s did not'
+                                    'significantly with p = %0.2f and %s did not'
                                     ' improve from %0.5f' %
                                     (epoch + 1, 'val_loss', self.best_loss,
                                      self.p, 'val_accuracy', self.best_acc))
@@ -101,7 +104,7 @@ class MyModelCheckpoint(ModelCheckpoint):
                         if self.verbose > 0:
                             print(
                                 '\nEpoch %05d: %s improved from %0.5f to %0.5f '
-                                'significantly in p=%0.2f value, saving model '
+                                'significantly with p = %0.2f , saving model '
                                 'to %s' %
                                 (epoch + 1, 'val_loss', self.best_loss,
                                  current_loss, self.p, filepath))

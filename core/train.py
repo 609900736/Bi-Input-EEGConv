@@ -385,11 +385,14 @@ class crossValidate(object):
         self.modelstr = built_fn.__name__[7:]
 
     def _normalize(self, data: dict):
-        '''normalizing on each trial'''
+        '''Normalizing on each trial, supports np.nan numbers'''
+        # TODO: need to reconsider the implement
         meta = ['x_train', 'x_test', 'x_val']
         for s in meta:
             if not s in data:
-                raise ValueError('Wrong using crossValidate._normalize()')
+                raise ValueError('Wrong using crossValidate._normalize(data),'
+                                 ' data is a dict which should have `x_train`'
+                                 ', `x_test`, and `x_val` keys')
 
         for s in meta:
             temp = data[s]

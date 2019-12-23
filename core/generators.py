@@ -84,3 +84,38 @@ class rawGenerator(BaseGenerator):
                                self.srate):math.ceil(self.end *
                                                      self.srate), np.newaxis]
         return data
+
+
+# 
+class _L1SOGenerator(BaseGenerator):
+    '''
+    Leave-One-Subject-Out data base Generator.
+    '''
+    def __init__(self, beg=0, end=4, srate=250):
+        super().__init__(beg=beg, end=end, srate=srate)
+
+    def _load_data(self, filepath):
+        data = load_data(filepath, label=False)
+        data = bandpassfilter(data, srate=self.srate)
+        data = data[:, :,
+                    math.floor(self.beg *
+                               self.srate):math.ceil(self.end *
+                                                     self.srate), np.newaxis]
+        return data
+
+
+class rawL1SOGenerator(_L1SOGenerator):
+    '''
+    Leave-One-Subject-Out raw data Generator.
+    '''
+    def __init__(self, beg=0, end=4, srate=250):
+        super().__init__(beg=beg, end=end, srate=srate)
+
+    def _load_data(self, filepath):
+        data = load_data(filepath, label=False)
+        data = bandpassfilter(data, srate=self.srate)
+        data = data[:, :,
+                    math.floor(self.beg *
+                               self.srate):math.ceil(self.end *
+                                                     self.srate), np.newaxis]
+        return data

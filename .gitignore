@@ -342,3 +342,5 @@ healthchecksdb
 
 # User defined
 *.mat
+./*.h5
+./*.png
