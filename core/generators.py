@@ -32,12 +32,7 @@ class BaseGenerator(object, metaclass=ABCMeta):
 
     @abstractmethod
     def _load_data(self, filepath):
-        data = load_data(filepath, label=False)
-        data = data[:, :,
-                    math.floor(self.beg *
-                               self.srate):math.ceil(self.end *
-                                                     self.srate), np.newaxis]
-        return data
+        pass
 
 
 class graphGenerator(BaseGenerator):
@@ -86,8 +81,8 @@ class rawGenerator(BaseGenerator):
         return data
 
 
-# 
-class _L1SOGenerator(BaseGenerator):
+# TODO: Leave-One-Subject-Out needs pre-load all subjects' data.
+class _BaseL1SOGenerator(BaseGenerator):
     '''
     Leave-One-Subject-Out data base Generator.
     '''
@@ -95,16 +90,10 @@ class _L1SOGenerator(BaseGenerator):
         super().__init__(beg=beg, end=end, srate=srate)
 
     def _load_data(self, filepath):
-        data = load_data(filepath, label=False)
-        data = bandpassfilter(data, srate=self.srate)
-        data = data[:, :,
-                    math.floor(self.beg *
-                               self.srate):math.ceil(self.end *
-                                                     self.srate), np.newaxis]
-        return data
+        raise NotImplementedError()
 
 
-class rawL1SOGenerator(_L1SOGenerator):
+class rawL1SOGenerator(_BaseL1SOGenerator):
     '''
     Leave-One-Subject-Out raw data Generator.
     '''

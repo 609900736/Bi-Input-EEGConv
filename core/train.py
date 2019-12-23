@@ -99,6 +99,20 @@ def create_graphEEGConvNet(nClasses,
     return model
 
 
+def create_attrawEEGConvNet():
+    """
+    TODO: 
+    """
+    pass
+
+
+def create_attgraphEEGConvNet():
+    """
+    TODO: 
+    """
+    pass
+
+
 def create_biEEGConvNet():
     """
     TODO: 
@@ -238,10 +252,8 @@ class crossValidate(object):
     def __call__(self, *args, **kwargs):
         if self.cropping:
             gent = self._read_cropped_data
-            pass
         else:
             gent = self._read_data
-            pass
 
         if not os.path.exists('model'):
             os.makedirs('model')
@@ -468,24 +480,14 @@ class crossValidate(object):
         }
         filepath = os.path.join('data', '4s', 'Test',
                                 'A0' + str(subject) + 'E.mat')
-        data['x_test'] = self.dataGent(filepath,
-                                       label=False,
-                                       *self.args,
-                                       **self.kwargs)
-        data['y_test'] = self.dataGent(filepath,
-                                       label=True,
-                                       *self.args,
-                                       **self.kwargs)
+        data['x_test'] = self.dataGent(filepath, label=False)
+        data['y_test'] = self.dataGent(filepath, label=True)
         filepath = os.path.join('data', '4s', 'Train',
                                 'A0' + str(subject) + 'T.mat')
         for (data['x_train'],
              data['y_train']), (data['x_val'], data['y_val']) in self._spilt(
-                 self.dataGent(filepath,
-                               label=False,
-                               *self.args,
-                               **self.kwargs),
-                 self.dataGent(filepath, label=True, *self.args,
-                               **self.kwargs)):
+                 self.dataGent(filepath, label=False),
+                 self.dataGent(filepath, label=True)):
             yield data
 
     def _spilt(self, X, y, groups=None):

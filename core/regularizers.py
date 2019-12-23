@@ -1,5 +1,4 @@
 # coding:utf-8
-from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
@@ -34,20 +33,21 @@ class TSG(Regularizer):
         self.l21 = K.cast_to_floatx(l21)
         self.tl1 = K.cast_to_floatx(tl1)
 
-    @tf.function
     def __call__(self, x):
         if not self.l1 and not self.l21 and not self.tl1:
             return K.constant(0.)
         regularization = 0.
 
-        if tf.rank(x) == 4:  # shape (?, 1, Timesteps, Features)
-            ntf = tf.reduce_sum(x, 1)  # shape (?, Timesteps, Features)
-        elif tf.rank(x) == 5:  # shape (?, 1, 1, Inputs, Outputs)
-            ntf = tf.reduce_sum(x, [1, 2])  # shape (?, Inputs, Outputs)
-        else:
-            ntf = x  # shape (?, Inputs, Outputs)
+        # if tf.rank(x) == 4:  # shape (?, 1, Timesteps, Features)
+        #     ntf = tf.reduce_sum(x, 1)  # shape (?, Timesteps, Features)
+        # elif tf.rank(x) == 5:  # shape (?, 1, 1, Inputs, Outputs)
+        #     ntf = tf.reduce_sum(x, [1, 2])  # shape (?, Inputs, Outputs)
+        # else:
+        #     ntf = x  # shape (?, Inputs, Outputs)
+        
+        ntf = tf.squeeze(x)
 
-        for n in tf.range(tf.shape(ntf)[0]):
+        for n in range(tf.shape(ntf)[0]):
             if self.l1:
                 regularization += self.l1 * tf.reduce_sum(tf.abs(ntf[n, :, :]))
             if self.l21:

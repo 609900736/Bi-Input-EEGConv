@@ -47,7 +47,7 @@ def rawEEGConvNet(nClasses,
                   F2=32,
                   l1=1e-3,
                   l21=1e-3,
-                  tl1=5e-6,
+                  tl1=5e-5,
                   norm_rate=0.25,
                   dtype=tf.float32,
                   dropoutType='Dropout'):

@@ -4,7 +4,6 @@ TODO: kernel constraint to keep mean of kernel weights values 0,
       and variance of them values 1/K (where K means the number 
       of input's neurons).
 """
-from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
