@@ -38,14 +38,12 @@ class TSG(Regularizer):
             return K.constant(0.)
         regularization = 0.
 
-        # if tf.rank(x) == 4:  # shape (?, 1, Timesteps, Features)
-        #     ntf = tf.reduce_sum(x, 1)  # shape (?, Timesteps, Features)
-        # elif tf.rank(x) == 5:  # shape (?, 1, 1, Inputs, Outputs)
-        #     ntf = tf.reduce_sum(x, [1, 2])  # shape (?, Inputs, Outputs)
-        # else:
-        #     ntf = x  # shape (?, Inputs, Outputs)
-        
-        ntf = tf.squeeze(x)
+        if tf.rank(x) == 4:  # shape (?, 1, Timesteps, Features)
+            ntf = tf.squeeze(x, 1)  # shape (?, Timesteps, Features)
+        elif tf.rank(x) == 5:  # shape (?, 1, 1, Inputs, Outputs)
+            ntf = tf.squeeze(x, [1, 2])  # shape (?, Inputs, Outputs)
+        else:
+            ntf = x  # shape (?, Inputs, Outputs)
 
         for n in range(tf.shape(ntf)[0]):
             if self.l1:
