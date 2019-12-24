@@ -29,7 +29,7 @@ from tensorflow.python.keras.constraints import max_norm, \
                                                 unit_norm
 from tensorflow.python.keras import backend as K
 
-from core.regularizers import l_1, l_2, l1_l2, l2_1, tsc, sgl, tsg
+from core.regularizers import l_1, l_2, l1_l2, l2_1, tsc, sgl, tsgl
 from core.constraints import std_norm
 from core.layers import rawEEGAttention, graphEEGAttention
 
@@ -93,8 +93,9 @@ def rawEEGConvNet(nClasses,
         if l1 or l21:
             s = Conv2D(
                 F2,
-                (1, 1),
+                (1, 16),
                 use_bias=False,
+                padding='same',
                 # kernel_constraint=std_norm(),
                 kernel_regularizer=sgl(l1, l21),
                 activity_regularizer=tsc(tl1),
@@ -103,8 +104,9 @@ def rawEEGConvNet(nClasses,
         else:
             s = Conv2D(
                 F2,
-                (1, 1),
+                (1, 16),
                 use_bias=False,
+                padding='same',
                 # kernel_constraint=std_norm(),
                 activity_regularizer=tsc(tl1),
                 # kernel_initializer='lecun_normal',
@@ -113,8 +115,9 @@ def rawEEGConvNet(nClasses,
         if l1 or l21:
             s = Conv2D(
                 F2,
-                (1, 1),
+                (1, 16),
                 use_bias=False,
+                padding='same',
                 # kernel_constraint=std_norm(),
                 kernel_regularizer=sgl(l1, l21),
                 # kernel_initializer='lecun_normal',
@@ -122,8 +125,9 @@ def rawEEGConvNet(nClasses,
         else:
             s = Conv2D(
                 F2,
-                (1, 1),
+                (1, 16),
                 use_bias=False,
+                padding='same',
                 # kernel_constraint=std_norm(),
                 # kernel_initializer='lecun_normal',
             )(s)

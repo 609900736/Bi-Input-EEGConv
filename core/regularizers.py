@@ -33,29 +33,38 @@ class TSG(Regularizer):
         self.l21 = K.cast_to_floatx(l21)
         self.tl1 = K.cast_to_floatx(tl1)
 
+    @tf.function
     def __call__(self, x):
         if not self.l1 and not self.l21 and not self.tl1:
             return K.constant(0.)
         regularization = 0.
 
-        if tf.rank(x) == 4:  # shape (?, 1, Timesteps, Features)
-            ntf = tf.squeeze(x, 1)  # shape (?, Timesteps, Features)
-        elif tf.rank(x) == 5:  # shape (?, 1, 1, Inputs, Outputs)
-            ntf = tf.squeeze(x, [1, 2])  # shape (?, Inputs, Outputs)
-        else:
+        # TODO: should we seperate kernel and activaty regularizers?
+        print("x: ",x.shape)
+        if x.shape[0] == 1:  # shape (1, 16, Inputs, Outputs)
+            print("kernel")
+            ntf = tf.squeeze(x)  # shape (16, Inputs, Outputs)
+            print("ntf: ",ntf.shape)
+        elif tf.rank(x) == 3:
+            print("activity ", 3)
             ntf = x  # shape (?, Inputs, Outputs)
+            print("ntf: ",ntf.shape)
+        else:  # shape (?, 1, Timesteps, Features)
+            print("activity ", 4)
+            ntf = tf.squeeze(x, 1)  # shape (?, Timesteps, Features)
+            print("ntf: ",ntf.shape)
+        print("ntf: ",ntf.shape)
 
-        for n in range(ntf.shape[0]):
-            if self.l1:
-                regularization += self.l1 * tf.reduce_sum(tf.abs(ntf[n, :, :]))
-            if self.l21:
-                regularization += self.l21 * tf.reduce_sum(
-                    tf.multiply(
-                        tf.sqrt(tf.cast(tf.shape(ntf)[1], tf.float32)),
-                        tf.sqrt(tf.reduce_sum(tf.square(ntf[n, :, :]), 1))))
-            if self.tl1:
-                regularization += self.tl1 * tf.reduce_sum(
-                    tf.abs(tf.subtract(ntf[n, :-1, :], ntf[n, 1:, :])))
+        if self.l1:
+            regularization += self.l1 * tf.reduce_sum(tf.abs(ntf))
+        if self.l21:
+            regularization += self.l21 * tf.reduce_sum(
+                tf.multiply(
+                    tf.sqrt(tf.cast(tf.shape(ntf)[0], tf.float32)),
+                    tf.sqrt(tf.reduce_sum(tf.square(ntf), 1))))
+        if self.tl1:
+            regularization += self.tl1 * tf.reduce_sum(
+                tf.abs(tf.subtract(ntf[:, :-1, :], ntf[:, 1:, :])))
         return regularization
 
     def get_config(self):
@@ -74,7 +83,10 @@ def l2_1(l21=0.01):
 
 # to preserve the temporal smoothness
 def tsc(tl1=0.01):
-    '''to preserve the temporal smoothness'''
+    '''
+    temporal constrained to preserve the temporal smoothness, for 
+    activity_regularizer.
+    '''
     return TSG(tl1=tl1)
 
 
@@ -84,6 +96,8 @@ def sgl(l1=0.01, l21=0.01):
     return TSG(l1=l1, l21=l21)
 
 
-def tsg(l1=0.01, l21=0.01, tl1=0.01):
-    '''temporal constrained sparse group lasso'''
+def tsgl(l1=0.01, l21=0.01, tl1=0.01):
+    '''
+    temporal constrained sparse group lasso, for activity_regularizer.
+    '''
     return TSG(l1=l1, l21=l21, tl1=tl1)
