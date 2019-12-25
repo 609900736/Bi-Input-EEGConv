@@ -39,8 +39,8 @@ class TSG(Regularizer):
         regularization = 0.
 
         # TODO: should we seperate kernel and activaty regularizers?
-        if x.shape[0] == 1:  # shape (1, 16, Inputs, Outputs)
-            ntf = tf.squeeze(x, 0)  # shape (16, Inputs, Outputs)
+        if x.shape[0] == 1:  # shape (1, len, Inputs, Outputs)
+            ntf = tf.squeeze(x, 0)  # shape (len, Inputs, Outputs)
         elif x.shape[1] == 1:  # shape (?, 1, Timesteps, Features)
             ntf = tf.squeeze(x, 1)  # shape (?, Timesteps, Features)
         else:  # shape (?, Inputs, Outputs)

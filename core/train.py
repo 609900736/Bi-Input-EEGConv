@@ -22,12 +22,14 @@ def create_MB3DCNN(nClasses,
                    Samples,
                    optimizer=tf.keras.optimizers.Adam(1e-3),
                    loss='sparse_categorical_crossentropy',
-                   metrics=['accuracy']):
+                   metrics=['accuracy'],
+                   summary=True):
     model = MB3DCNN(nClasses, H=H, W=W, Samples=Samples)
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-    model.summary()
-    # export graph of the model
-    tf.keras.utils.plot_model(model, 'MB3DCNN.png', show_shapes=True)
+    if summary:
+        model.summary()
+        # export graph of the model
+        tf.keras.utils.plot_model(model, 'MB3DCNN.png', show_shapes=True)
     return model
 
 
@@ -39,7 +41,8 @@ def create_EEGNet(nClasses,
                   Ns=4,
                   optimizer=tf.keras.optimizers.Adam(1e-3),
                   loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy']):
+                  metrics=['accuracy'],
+                  summary=True):
     model = EEGNet(nClasses,
                    Chans=Chans,
                    Samples=Samples,
@@ -47,9 +50,10 @@ def create_EEGNet(nClasses,
                    D=D,
                    F2=nClasses * 2 * Ns)
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-    model.summary()
-    # export graph of the model
-    tf.keras.utils.plot_model(model, 'EEGNet.png', show_shapes=True)
+    if summary:
+        model.summary()
+        # export graph of the model
+        tf.keras.utils.plot_model(model, 'EEGNet.png', show_shapes=True)
     return model
 
 
@@ -65,7 +69,8 @@ def create_rawEEGConvNet(nClasses,
                          tl1=0.001,
                          optimizer=tf.keras.optimizers.Adam(1e-3),
                          loss='sparse_categorical_crossentropy',
-                         metrics=['accuracy']):
+                         metrics=['accuracy'],
+                         summary=True):
     model = rawEEGConvNet(nClasses,
                           Chans=Chans,
                           Samples=Samples,
@@ -77,9 +82,10 @@ def create_rawEEGConvNet(nClasses,
                           l21=l21,
                           tl1=tl1)
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-    # export graph of the model
-    model.summary()
-    tf.keras.utils.plot_model(model, 'rawEEGConvNet.png', show_shapes=True)
+    if summary:
+        # export graph of the model
+        model.summary()
+        tf.keras.utils.plot_model(model, 'rawEEGConvNet.png', show_shapes=True)
     return model
 
 
@@ -90,12 +96,16 @@ def create_graphEEGConvNet(nClasses,
                            W=35,
                            optimizer=tf.keras.optimizers.Adam(1e-3),
                            loss='sparse_categorical_crossentropy',
-                           metrics=['accuracy']):
+                           metrics=['accuracy'],
+                           summary=True):
     model = graphEEGConvNet(nClasses, Colors=Colors, Samples=Samples, H=H, W=W)
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-    # export graph of the model
-    model.summary()
-    tf.keras.utils.plot_model(model, 'graphEEGConvNet.png', show_shapes=True)
+    if summary:
+        # export graph of the model
+        model.summary()
+        tf.keras.utils.plot_model(model,
+                                  'graphEEGConvNet.png',
+                                  show_shapes=True)
     return model
 
 
@@ -173,12 +183,12 @@ class crossValidate(object):
     ```python
     from core.splits import StratifiedKFold
 
-    def create_model(Samples, *args, **kwargs):
+    def create_model(Samples, *args, summary=True, **kwargs):
         ...
         return keras_model
 
     class dataGenerator:
-        def __init__(self, *a, **kw, beg=0, end=4, srate=250):
+        def __init__(self, *a, beg=0, end=4, srate=250, **kw):
             ...
 
         def __call__(self, filepath, label=False):
@@ -262,8 +272,16 @@ class crossValidate(object):
         validation_name = 'Cross Validation'
 
         model = self.built_fn(*args, **kwargs, Samples=self.Samples)
-
+        model_best = self.built_fn(*args,
+                                   **kwargs,
+                                   Samples=self.Samples,
+                                   summary=False)
         tm = time.localtime()
+        initfile = os.path.join(
+            '.', '{0:d}_{1:0>2d}_{2:0>2d}_{3:0>2d}_{4:0>2d}_{5:0>2d}_{6:s}.h5'.
+            format(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min,
+                   tm.tm_sec, self.modelstr))
+        tf.keras.models.save_model(model, initfile)
 
         earlystopping = EarlyStopping(monitor='val_loss',
                                       min_delta=0,
@@ -308,7 +326,7 @@ class crossValidate(object):
                     validation_data=[data['x_val'], data['y_val']])
 
                 # load the best model and evaluate its accuracy
-                model_best = tf.keras.Model.load_weights(filepath)
+                model_best.load_weights(filepath)
                 loss, acc = model_best.evaluate(data['x_test'],
                                                 data['y_test'],
                                                 batch_size=self.batch_size,
@@ -319,6 +337,7 @@ class crossValidate(object):
                 np.save(filepath, history.history)
 
                 # reset model's weights to train a new one next fold
+                model.load_weights(initfile)
                 model.reset_states()
 
                 accik.append(acc)
@@ -341,6 +360,8 @@ class crossValidate(object):
             f.seek(0, 0)
             print(f.readlines())
             f.close()
+        if os.path.exists(initfile):
+            os.remove(initfile)
         avg_acc.append(total_avg_acc)
         return avg_acc
 

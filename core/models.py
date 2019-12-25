@@ -45,9 +45,9 @@ def rawEEGConvNet(nClasses,
                   F1=9,
                   D=4,
                   F2=32,
-                  l1=1.,
-                  l21=1.,
-                  tl1=1.,
+                  l1=1e-3,
+                  l21=1e-3,
+                  tl1=1e-5,
                   norm_rate=0.25,
                   dtype=tf.float32,
                   dropoutType='Dropout'):
@@ -74,7 +74,7 @@ def rawEEGConvNet(nClasses,
         padding='same',
         use_bias=False,
         # kernel_constraint=std_norm(),
-        kernel_initializer='lecun_normal',
+        # kernel_initializer='lecun_normal',
     )(_input_s)
     s = BatchNormalization(axis=-1)(s)
     s = DepthwiseConv2D(
@@ -83,66 +83,66 @@ def rawEEGConvNet(nClasses,
         depth_multiplier=D,
         # depthwise_constraint=std_norm(),
         depthwise_constraint=max_norm(1.),
-        depthwise_initializer='lecun_normal',
+        # depthwise_initializer='lecun_normal',
     )(s)
     s = BatchNormalization(axis=-1)(s)
-    s = Activation('selu')(s)
+    s = Activation('elu')(s)
     s = AveragePooling2D((1, 4))(s)
     s = dropoutType(dropoutRate)(s)
     if tl1:
         if l1 or l21:
             s = Conv2D(
                 F2,
-                (1, 16),
+                (1, 1),
                 use_bias=False,
                 padding='same',
                 # kernel_constraint=std_norm(),
                 kernel_regularizer=sgl(l1, l21),
                 activity_regularizer=tsc(tl1),
-                kernel_initializer='lecun_normal',
+                # kernel_initializer='lecun_normal',
             )(s)
         else:
             s = Conv2D(
                 F2,
-                (1, 16),
+                (1, 1),
                 use_bias=False,
                 padding='same',
                 # kernel_constraint=std_norm(),
                 activity_regularizer=tsc(tl1),
-                kernel_initializer='lecun_normal',
+                # kernel_initializer='lecun_normal',
             )(s)
     else:
         if l1 or l21:
             s = Conv2D(
                 F2,
-                (1, 16),
+                (1, 1),
                 use_bias=False,
                 padding='same',
                 # kernel_constraint=std_norm(),
                 kernel_regularizer=sgl(l1, l21),
-                kernel_initializer='lecun_normal',
+                # kernel_initializer='lecun_normal',
             )(s)
         else:
             s = Conv2D(
                 F2,
-                (1, 16),
+                (1, 1),
                 use_bias=False,
                 padding='same',
                 # kernel_constraint=std_norm(),
-                kernel_initializer='lecun_normal',
+                # kernel_initializer='lecun_normal',
             )(s)
     # s = BatchNormalization(axis=-1)(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
     # s = Conv2D(s.shape[3], (1, 1), use_bias=False, kernel_regularizer=tsc(tl1))(s)
     # s = Reshape((s.shape[1], s.shape[3], s.shape[2]))(s)
     s = BatchNormalization(axis=-1)(s)
-    s = Activation('selu')(s)
+    s = Activation('elu')(s)
     s = AveragePooling2D((1, 8))(s)
     s = dropoutType(dropoutRate)(s)
     flatten = Flatten()(s)
     dense = Dense(
         nClasses,
-        kernel_initializer='lecun_normal',
+        # kernel_initializer='lecun_normal',
         # kernel_constraint=std_norm(),
         kernel_constraint=max_norm(norm_rate),
     )(flatten)

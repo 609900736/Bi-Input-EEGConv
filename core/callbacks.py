@@ -84,8 +84,7 @@ class MyModelCheckpoint(ModelCheckpoint):
                                     % (epoch + 1, 'val_loss', self.best_loss,
                                        current_loss, self.p, 'val_accuracy',
                                        self.best_acc, current_acc, filepath))
-                            if self.loss_op(current_loss, self.best_loss):
-                                self.best_loss = current_loss
+                            self.best_loss = current_loss
                             self.best_acc = current_acc
                             if self.save_weights_only:
                                 self.model.save_weights(filepath,
