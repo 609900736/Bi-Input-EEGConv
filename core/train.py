@@ -149,7 +149,7 @@ class crossValidate(object):
                       generator; If RandomState instance, random_state is the random 
                       number generator; If None, the random number generator is the 
                       RandomState instance used by np.random. Used when shuffle == True.
-    subs            : int, Number of subjects.
+    subs            : list, list of subjects' number, like `range(1, 9)`.
     cropping        : bool, Switch of cropped training. Default = False.
     normalizing     : bool, Switch of normalizing data. Default = True.
     batch_size      : int, Batch size.
@@ -198,7 +198,7 @@ class crossValidate(object):
                 srate=250,
                 splitMethod=StratifiedKFold,
                 kFold=10, 
-                subs=9, 
+                subs=range(1, 9), 
                 *a, 
                 **kw)(*args, **kwargs)
     ```
@@ -217,7 +217,7 @@ class crossValidate(object):
                  kFold=10,
                  shuffle=False,
                  random_state=None,
-                 subs=9,
+                 subs: list = range(1, 9),
                  cropping=False,
                  normalizing=True,
                  batch_size=10,
@@ -262,8 +262,6 @@ class crossValidate(object):
         validation_name = 'Cross Validation'
 
         model = self.built_fn(*args, **kwargs, Samples=self.Samples)
-        # save initial weights
-        model.save_weights(self.modelstr + '.h5')
 
         tm = time.localtime()
 
@@ -274,7 +272,7 @@ class crossValidate(object):
                                       mode='auto')
 
         avg_acc = []
-        for i in range(1, self.subs + 1):
+        for i in self.subs:
             accik = []
             k = 0  # count kFolds
             for data in gent(i):
@@ -282,10 +280,9 @@ class crossValidate(object):
 
                 filepath = os.path.join(
                     'model',
-                    str(tm.tm_year) + '_' + str(tm.tm_mon) + '_' +
-                    str(tm.tm_mday) + '_' + str(tm.tm_hour) + '_' +
-                    str(tm.tm_min) + '_' + str(tm.tm_sec) + '_A0' + str(i) +
-                    'T_' + self.modelstr + '(' + str(k) + ').h5')
+                    '{0:d}_{1:0>2d}_{2:0>2d}_{3:0>2d}_{4:0>2d}_{5:0>2d}_A0{6:d}T_{7:s}({8:d}).h5'
+                    .format(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour,
+                            tm.tm_min, tm.tm_sec, i, self.modelstr, k))
                 checkpointer = MyModelCheckpoint(filepath=filepath,
                                                  verbose=1,
                                                  save_best_only=True,
@@ -308,21 +305,21 @@ class crossValidate(object):
                     epochs=self.epochs,
                     callbacks=[checkpointer, earlystopping],
                     verbose=self.verbose,
-                    validation_data=[data['x_val'], data['y_val']]).history
+                    validation_data=[data['x_val'], data['y_val']])
 
-                model.load_weights(filepath)
-                loss, acc = model.evaluate(data['x_test'],
-                                           data['y_test'],
-                                           batch_size=self.batch_size,
-                                           verbose=self.verbose)
+                # load the best model and evaluate its accuracy
+                model_best = tf.keras.Model.load_weights(filepath)
+                loss, acc = model_best.evaluate(data['x_test'],
+                                                data['y_test'],
+                                                batch_size=self.batch_size,
+                                                verbose=self.verbose)
 
+                # save the train history
                 filepath = filepath[:-3] + '.npy'
-                np.save(filepath, history)
+                np.save(filepath, history.history)
 
-                # reset layers weights to train a new one next fold.
-                # you can't use model.reset_states() because it has
-                # loaded another weights before.
-                model.load_weights(self.modelstr + '.h5')
+                # reset model's weights to train a new one next fold
+                model.reset_states()
 
                 accik.append(acc)
             avg_acc.append(np.average(np.asarray(accik)))
@@ -337,7 +334,7 @@ class crossValidate(object):
             sys.stdout = f
             print(('{0:s} {1:d}-fold ' + validation_name + ' Accuracy').format(
                 self.modelstr, self.kFold))
-            for i in range(1, self.subs + 1):
+            for i in self.subs:
                 print('Subject {0:0>2d}: {1:.2%}'.format(i, avg_acc[i - 1]))
             print('Average   : {:.2%}'.format(total_avg_acc))
             sys.stdout = console
@@ -348,11 +345,12 @@ class crossValidate(object):
         return avg_acc
 
     def getConfig(self):
+        # TODO: Use dict to reconstruct this function.
         print(
             'Method: {0:s}\nSplit Method: {1:s}\nCross Validation Fold: {2:d}\n'
-            'shuffle: {3}\nrandom_state: {4:d}\nNumber of subjects: {5:d}'.
-            format(self.modelstr, self.splitMethod.__name__, self.kFold,
-                   self.shuffle, self.random_state, self.subs))
+            'shuffle: {3}\nrandom_state: {4:d}\nSubjects: {5}'.format(
+                self.modelstr, self.splitMethod.__name__, self.kFold,
+                self.shuffle, self.random_state, self.subs))
 
     def setConfig(self,
                   built_fn,
@@ -364,7 +362,7 @@ class crossValidate(object):
                   kFold=10,
                   shuffle=False,
                   random_state=None,
-                  subs=9,
+                  subs: list = range(1, 9),
                   cropping=False,
                   normalizing=True,
                   batch_size=10,
@@ -398,7 +396,7 @@ class crossValidate(object):
 
     def _normalize(self, data: dict):
         '''Normalizing on each trial, supports np.nan numbers'''
-        # TODO: need to reconsider the implement
+        # TODO: Maybe the implement needs to be reconsidered
         meta = ['x_train', 'x_test', 'x_val']
         for s in meta:
             if not s in data:
