@@ -93,18 +93,18 @@ def rawEEGConvNet(nClasses,
         if l1 or l21:
             s = Conv2D(
                 F2,
-                (1, 1),
+                (1, 16),
                 use_bias=False,
                 padding='same',
                 # kernel_constraint=std_norm(),
-                kernel_regularizer=sgl(l1, l21),
+                pointwise_regularizer=sgl(l1, l21),
                 activity_regularizer=tsc(tl1),
                 # kernel_initializer='lecun_normal',
             )(s)
         else:
             s = Conv2D(
                 F2,
-                (1, 1),
+                (1, 16),
                 use_bias=False,
                 padding='same',
                 # kernel_constraint=std_norm(),
@@ -115,17 +115,17 @@ def rawEEGConvNet(nClasses,
         if l1 or l21:
             s = Conv2D(
                 F2,
-                (1, 1),
+                (1, 16),
                 use_bias=False,
                 padding='same',
                 # kernel_constraint=std_norm(),
-                kernel_regularizer=sgl(l1, l21),
+                pointwise_regularizer=sgl(l1, l21),
                 # kernel_initializer='lecun_normal',
             )(s)
         else:
             s = Conv2D(
                 F2,
-                (1, 1),
+                (1, 16),
                 use_bias=False,
                 padding='same',
                 # kernel_constraint=std_norm(),
