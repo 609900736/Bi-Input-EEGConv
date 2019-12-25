@@ -33,35 +33,27 @@ class TSG(Regularizer):
         self.l21 = K.cast_to_floatx(l21)
         self.tl1 = K.cast_to_floatx(tl1)
 
-    @tf.function
     def __call__(self, x):
         if not self.l1 and not self.l21 and not self.tl1:
             return K.constant(0.)
         regularization = 0.
 
         # TODO: should we seperate kernel and activaty regularizers?
-        print("x: ",x.shape)
         if x.shape[0] == 1:  # shape (1, 16, Inputs, Outputs)
-            print("kernel")
-            ntf = tf.squeeze(x)  # shape (16, Inputs, Outputs)
-            print("ntf: ",ntf.shape)
-        elif tf.rank(x) == 3:
-            print("activity ", 3)
-            ntf = x  # shape (?, Inputs, Outputs)
-            print("ntf: ",ntf.shape)
-        else:  # shape (?, 1, Timesteps, Features)
-            print("activity ", 4)
+            ntf = tf.squeeze(x, 0)  # shape (16, Inputs, Outputs)
+        elif x.shape[1] == 1:  # shape (?, 1, Timesteps, Features)
             ntf = tf.squeeze(x, 1)  # shape (?, Timesteps, Features)
-            print("ntf: ",ntf.shape)
-        print("ntf: ",ntf.shape)
+        else:  # shape (?, Inputs, Outputs)
+            ntf = x  # shape (?, Inputs, Outputs)
+        # now Tensor `ntf` ranks 3
 
         if self.l1:
             regularization += self.l1 * tf.reduce_sum(tf.abs(ntf))
         if self.l21:
             regularization += self.l21 * tf.reduce_sum(
-                tf.multiply(
-                    tf.sqrt(tf.cast(tf.shape(ntf)[0], tf.float32)),
-                    tf.sqrt(tf.reduce_sum(tf.square(ntf), 1))))
+                tf.sqrt(
+                    tf.multiply(tf.cast(ntf.shape[1], tf.float32),
+                                tf.reduce_sum(tf.square(ntf), 2))))
         if self.tl1:
             regularization += self.tl1 * tf.reduce_sum(
                 tf.abs(tf.subtract(ntf[:, :-1, :], ntf[:, 1:, :])))
