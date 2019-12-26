@@ -64,8 +64,8 @@ def create_rawEEGConvNet(nClasses,
                          F=9,
                          D=4,
                          Ns=4,
-                         l1=1e-3,
-                         l21=1e-3,
+                         l1=1e-4,
+                         l21=1e-4,
                          tl1=1e-5,
                          optimizer=tf.keras.optimizers.Adam(1e-3),
                          loss='sparse_categorical_crossentropy',
@@ -159,7 +159,7 @@ class crossValidate(object):
                       generator; If RandomState instance, random_state is the random 
                       number generator; If None, the random number generator is the 
                       RandomState instance used by np.random. Used when shuffle == True.
-    subs            : list, list of subjects' number, like `range(1, 9)`.
+    subs            : list, list of subjects' number, like `range(1, 10)`.
     cropping        : bool, Switch of cropped training. Default = False.
     normalizing     : bool, Switch of normalizing data. Default = True.
     batch_size      : int, Batch size.
@@ -208,7 +208,7 @@ class crossValidate(object):
                 srate=250,
                 splitMethod=StratifiedKFold,
                 kFold=10, 
-                subs=range(1, 9), 
+                subs=range(1, 10), 
                 *a, 
                 **kw)(*args, **kwargs)
     ```
@@ -227,7 +227,7 @@ class crossValidate(object):
                  kFold=10,
                  shuffle=False,
                  random_state=None,
-                 subs: list = range(1, 9),
+                 subs: list = range(1, 10),
                  cropping=False,
                  normalizing=True,
                  batch_size=10,
@@ -346,9 +346,9 @@ class crossValidate(object):
         total_avg_acc = np.average(np.asarray(avg_acc))
         filepath = os.path.join(
             'result',
-            str(tm.tm_year) + '_' + str(tm.tm_mon) + '_' + str(tm.tm_mday) +
-            '_' + str(tm.tm_hour) + '_' + str(tm.tm_min) + '_' +
-            str(tm.tm_sec) + '_' + self.modelstr + '.txt')
+            '{0:d}_{1:0>2d}_{2:0>2d}_{3:0>2d}_{4:0>2d}_{5:0>2d}_{6:s}.txt'.
+            format(tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min,
+                   tm.tm_sec, self.modelstr))
         with open(filepath, 'w+') as f:
             sys.stdout = f
             print(('{0:s} {1:d}-fold ' + validation_name + ' Accuracy').format(
@@ -383,7 +383,7 @@ class crossValidate(object):
                   kFold=10,
                   shuffle=False,
                   random_state=None,
-                  subs: list = range(1, 9),
+                  subs: list = range(1, 10),
                   cropping=False,
                   normalizing=True,
                   batch_size=10,
