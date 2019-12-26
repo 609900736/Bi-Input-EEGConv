@@ -353,8 +353,8 @@ class crossValidate(object):
             sys.stdout = f
             print(('{0:s} {1:d}-fold ' + validation_name + ' Accuracy').format(
                 self.modelstr, self.kFold))
-            for i in self.subs:
-                print('Subject {0:0>2d}: {1:.2%}'.format(i, avg_acc[i - 1]))
+            for i in range(len(self.subs)):
+                print('Subject {0:0>2d}: {1:.2%}'.format(self.subs[i], avg_acc[i]))
             print('Average   : {:.2%}'.format(total_avg_acc))
             sys.stdout = console
             f.seek(0, 0)
